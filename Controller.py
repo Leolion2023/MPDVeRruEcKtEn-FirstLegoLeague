@@ -13,7 +13,7 @@ import math
 
 MotorPorts:
     A = 0: MotorRight
-    B = 1: AbilityLeft    # ILLEGAL
+    B = 1: Unused
     C = 2: Unused
     D = 3: Addition
     E = 4: MotorLeft
