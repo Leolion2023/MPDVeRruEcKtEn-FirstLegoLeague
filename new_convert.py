@@ -10,6 +10,7 @@ class Llsp3File:
     def __init__(self, filepath):
         self.filepath = filepath
         self.python_code = None
+        self.merged_code = None
 
     def extract_python_code(self):
         """Extracts Python code from a .llsp3 file."""
@@ -19,6 +20,7 @@ class Llsp3File:
                     with zip_ref.open("projectbody.json") as json_file:
                         project_data = json.load(json_file)
                         self.python_code = project_data.get("main", "")
+                        self.merged_code = self.python_code  # Store the initial code for merging
         except zipfile.BadZipFile:
             messagebox.showerror("Error", f"{os.path.basename(self.filepath)} is not a valid ZIP archive.")
             return None
@@ -108,7 +110,7 @@ def convert_and_sync():
                 py_file.write(merged_code)
 
             # Store the merged code temporarily in the current llsp3 file object
-            current_llsp3_file.python_code = merged_code
+            current_llsp3_file.merged_code = merged_code
 
         else:
             with open(py_filepath, "w", encoding="utf-8") as py_file:
@@ -121,16 +123,21 @@ def finalize_and_push():
     """Finalize the merge and push the changes back to both the Python file and the .llsp3 archive."""
     global current_llsp3_file
 
-    if current_llsp3_file and hasattr(current_llsp3_file, 'python_code') and current_llsp3_file.python_code:
-        merged_code = current_llsp3_file.python_code
+    if current_llsp3_file:
+        # Check if the Python file was manually changed after merge
         py_filename = os.path.splitext(os.path.basename(current_llsp3_file.filepath))[0] + ".py"
         py_filepath = os.path.join(os.path.dirname(current_llsp3_file.filepath), py_filename)
 
-        # Save merged code to the Python file.
-        with open(py_filepath, "w", encoding="utf-8") as py_file:
-            py_file.write(merged_code)
+        with open(py_filepath, "r", encoding="utf-8") as py_file:
+            user_modified_code = py_file.read()
 
-        # Now push the changes into the .llsp3 file.
+        # If user modified the Python file, use it instead of the merged code
+        if user_modified_code != current_llsp3_file.merged_code:
+            merged_code = user_modified_code
+        else:
+            merged_code = current_llsp3_file.merged_code
+
+        # Update the .llsp3 file with the final code (whether it's the merged code or user's manual change)
         current_llsp3_file.update_code(merged_code)
 
         # Final Git commit and push after synchronization.
