@@ -11,6 +11,7 @@ class Llsp3File:
         self.filepath = filepath
         self.python_code = None
         self.merged_code = None
+        self.llsp3_data = None
 
     def extract_python_code(self):
         """Extracts Python code from a .llsp3 file."""
@@ -20,6 +21,7 @@ class Llsp3File:
                     with zip_ref.open("projectbody.json") as json_file:
                         project_data = json.load(json_file)
                         self.python_code = project_data.get("main", "")
+                        self.llsp3_data = project_data  # Store the entire JSON data for further use
                         self.merged_code = self.python_code  # Store the initial code for merging
         except zipfile.BadZipFile:
             messagebox.showerror("Error", f"{os.path.basename(self.filepath)} is not a valid ZIP archive.")
@@ -37,7 +39,7 @@ class Llsp3File:
             if os.path.exists(json_path):
                 with open(json_path, "r", encoding="utf-8") as json_file:
                     data = json.load(json_file)
-                data["main"] = new_code
+                data["main"] = new_code  # Update the Python code
                 with open(json_path, "w", encoding="utf-8") as json_file:
                     json.dump(data, json_file, indent=4)
 
@@ -53,6 +55,7 @@ class Llsp3File:
                 os.rmdir(root)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update .llsp3 file: {e}")
+
 
 class GitMergeSimulator:
     def __init__(self, original_code, new_code):
@@ -80,6 +83,39 @@ class GitMergeSimulator:
         else:
             return "\n".join(merged_lines)
 
+
+def fetch_git_version(filepath, version):
+    """Fetch the Git version of a file (base, current, or other), using the filename only."""
+    try:
+        # Get the root directory of the Git repository
+        git_root = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"], 
+            capture_output=True, 
+            check=True, 
+            text=False  # Avoid automatic decoding of output
+        ).stdout
+
+        # Extract the filename from the full path
+        filename = os.path.basename(filepath)
+
+        # Construct the relative path for the file from the Git root directory
+        relative_filepath = os.path.relpath(filepath, git_root.decode("utf-8").strip())
+
+        # Fetch the specific version from Git using the relative file path
+        result = subprocess.run(
+            ["git", "show", f"{version}:{relative_filepath}"], 
+            capture_output=True, 
+            check=True, 
+            text=False  # Avoid automatic decoding of output
+        )
+
+        # Explicitly decode the output if needed
+        return result.stdout.decode("utf-8", errors="replace")  # Use 'replace' to handle undecodable chars
+    except subprocess.CalledProcessError as e:
+        messagebox.showerror("Git Error", f"Failed to fetch Git version: {e}")
+        return None
+
+
 # Global variable to store the current Llsp3File being processed
 current_llsp3_file = None
 
@@ -103,21 +139,29 @@ def convert_and_sync():
             with open(py_filepath, "r", encoding="utf-8") as py_file:
                 existing_code = py_file.read()
 
-            merge_tool = GitMergeSimulator(existing_code, new_python_code)
-            merged_code = merge_tool.merge()
+            # First, fetch the Git versions of both the .py and .llsp3 files
+            base_python_code = fetch_git_version(py_filepath, "HEAD^")
+            base_llsp3_code = fetch_git_version(filepath, "HEAD^")
 
-            with open(py_filepath, "w", encoding="utf-8") as py_file:
-                py_file.write(merged_code)
+            # Compare the base versions of the files with the current ones
+            if base_python_code and base_llsp3_code:
+                # Compare the Python code versions
+                merge_tool = GitMergeSimulator(existing_code, new_python_code)
+                merged_code = merge_tool.merge()
 
-            # Store the merged code temporarily in the current llsp3 file object
-            current_llsp3_file.merged_code = merged_code
+                # Convert the .llsp3 file and compare its versions
+                llsp3_merge_tool = GitMergeSimulator(base_llsp3_code, new_python_code)
+                merged_llsp3_code = llsp3_merge_tool.merge()
 
-        else:
-            with open(py_filepath, "w", encoding="utf-8") as py_file:
-                py_file.write(new_python_code)
-            current_llsp3_file.update_code(new_python_code)
+                # Update both files if changes exist
+                current_llsp3_file.update_code(merged_llsp3_code)
+                with open(py_filepath, "w", encoding="utf-8") as py_file:
+                    py_file.write(merged_code)
+            else:
+                messagebox.showerror("Git Error", "Failed to fetch base Git versions.")
 
     messagebox.showinfo("Success", "Python files merged. Please review the changes.")
+
 
 def finalize_and_push():
     """Finalize the merge and push the changes back to both the Python file and the .llsp3 archive."""
@@ -152,9 +196,10 @@ def finalize_and_push():
             subprocess.run(["git", "push"], check=True)
             messagebox.showinfo("Success", "Changes committed and pushed successfully!")
         except subprocess.CalledProcessError as e:
-            messagebox.showerror("Git Error", f"Git command failed: {e}")
+            messagebox.showerror("Git Error", f"Failed to commit and push changes: {e}")
     else:
         messagebox.showerror("Error", "No merged code available for push.")
+
 
 def setup_gui():
     """Sets up the Tkinter UI."""
