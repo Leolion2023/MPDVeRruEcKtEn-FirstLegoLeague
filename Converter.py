@@ -11,7 +11,6 @@ class File:
     def __init__(self, filepath):
         self.filepath = filepath
         self.python_code: str = None
-        self.merged_code = None
         self.raw_code = None
 
     def extract_python_code(self):
@@ -20,7 +19,6 @@ class File:
             with open(self.filepath, "r", encoding="utf-8") as py_file:
                 data = py_file.read()
                 self.python_code = data
-                self.merged_code = data
                 self.raw_code = data
                 return data
         try:
@@ -29,12 +27,7 @@ class File:
                     with zip_ref.open("projectbody.json") as json_file:
                         project_data = json.load(json_file)
                         self.python_code = project_data.get("main", "")
-                        self.raw_code = (
-                            project_data  # Store the entire JSON data for further use
-                        )
-                        self.merged_code = (
-                            self.python_code
-                        )  # Store the initial code for merging
+                        self.raw_code = project_data
         except zipfile.BadZipFile:
             messagebox.showerror(
                 "Error",
@@ -53,9 +46,6 @@ class llsp3File(File):
                     with zip_ref.open("projectbody.json") as json_file:
                         project_data = json.load(json_file)
                         self.python_code = project_data.get("main", "")
-                        self.merged_code = (
-                            self.python_code
-                        )  # Store the initial code for merging
         except zipfile.BadZipFile:
             messagebox.showerror(
                 "Error",
@@ -109,8 +99,6 @@ class PythonFile(File):
             with open(self.filepath, "r", encoding="utf-8") as py_file:
                 data = py_file.read()
                 self.python_code = data
-                self.merged_code = data
-                self.raw_code = data
                 return data
 
     def update_code(self, new_code):
@@ -133,35 +121,279 @@ class GitTool:
 
     def python_merge(self):
         """Merge the pythonfile with the HEAD git code"""
-        pass
+        python_path = self.python_file.filepath
+        base_lines = []
+        remote_lines = []
+
+        try:
+            base = self.__fetch_python__(python_path, self.__get_base_version__(python_path))
+            base_lines = base.splitlines()
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to fetch base version: {e}")
+
+        try:
+            remote = self.__fetch_python__(python_path, "origin/main")
+            remote_lines = remote.splitlines()
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to fetch remote version: {e}")
+
+        local = self.python_file.extract_python_code()
+        local_lines = local.splitlines()
+
+        merged_lines = []
+        conflict = False
+
+        sm_local = difflib.SequenceMatcher(None, base_lines, local_lines, False)
+        sm_remote = difflib.SequenceMatcher(None, base_lines, remote_lines)
+
+        local_changes = {}
+        remote_changes = {}
+
+        for tag, i1, i2, j1, j2 in sm_local.get_opcodes():
+            if tag in ("replace", "insert", "delete"):
+                if tag == "replace" or tag == "insert":
+                    for i, line in enumerate(local_lines[j1:j2]):
+                        local_changes[i1 + i] = [line]
+                elif tag == "delete":
+                    for i in range(i1, i2):
+                        local_changes[i] = [""]
+
+        for tag, i1, i2, j1, j2 in sm_remote.get_opcodes():
+            if tag in ("replace", "insert", "delete"):
+                if tag == "replace" or tag == "insert":
+                    for i, line in enumerate(remote_lines[j1:j2]):
+                        remote_changes[i1 + i] = [line]
+                elif tag == "delete":
+                    for i in range(i1, i2):
+                        remote_changes[i] = [""]
+        
+        max_len = max(len(base_lines), max(local_changes.keys(), default=0) + 1, max(remote_changes.keys(), default=0) + 1)
+
+        for i in range(max_len):
+            base_line = base_lines[i] if i < len(base_lines) else ""
+            local_change = local_changes.get(i, [base_line])
+            remote_change = remote_changes.get(i, [base_line])
+            
+            if local_change == remote_change:
+                merged_lines.extend(local_change)
+            elif local_change != [base_line] and remote_change != [base_line]:
+                conflict = True
+                merged_lines.append(f"<<<<<<< LOCAL\n" + "\n".join(local_change) +
+                                    "\n=======\n" + "\n".join(remote_change) +
+                                    "\n>>>>>>> REMOTE")
+            elif local_change != [base_line]:
+                merged_lines.extend(local_change)
+            elif remote_change != [base_line]:
+                merged_lines.extend(remote_change)
+            else:
+                merged_lines.append(base_line)
+
+        if conflict:
+            print("Merge conflict detected. Manual resolution required.")
+            output_file = PythonFile("merged_code.py")
+            output_file.update_code("\n".join(merged_lines))
+        else:
+            print("No conflicts detected. Merging successful.")
+
+        return "\n".join(merged_lines)
+
+
+
 
     def llsp3_merge(self):
         """Merge the llsp3file with the HEAD git code"""
 
-        head_raw = self.__fetch_llsp3__(self.llsp3_file.filepath)
+        llsp3path = self.llsp3_file.filepath
+        base_lines = []
+        remote_lines = []
 
-        llsp3_head = llsp3File("head_llsp3_file.llsp3")
-        llsp3_head.write_binary(head_raw)
+        try:
+            base_raw = self.__fetch_llsp3__(llsp3path, self.__get_base_version__(llsp3path))
+            base_llsp3 = llsp3File("base.llsp3")
+            base_llsp3.write_binary(base_raw)
+            base = base_llsp3.extract_python_code()
+            base_lines = base.splitlines()
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to fetch base version: {e}")
 
-        old_code = llsp3_head.extract_python_code().splitlines()
-        new_code = self.llsp3_file.extract_python_code().splitlines()
+        try:
+            remote_raw = self.__fetch_llsp3__(llsp3path, "origin/main")
+            remote_llsp3 = llsp3File("remote.llsp3")
+            remote_llsp3.write_binary(remote_raw)
+            remote = remote_llsp3.extract_python_code()
+            remote_lines = remote.splitlines()
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to fetch remote version: {e}")
 
-        print("\n")
-        print("OLD: ")
-        print(old_code)
-        print("\n")
-        print("NEW: ")
-        print(new_code)
+        local = self.llsp3_file.extract_python_code()
+        local_lines = local.splitlines()
 
-        diff = list(difflib.ndiff(old_code, new_code))
-        print("\n")
-        print("Diff: ")
-        print(diff)
+        merged_lines = []
+        conflict = False
 
-        if os.path.exists(llsp3_head.filepath):
-            os.remove(llsp3_head.filepath)
+        sm_local = difflib.SequenceMatcher(None, base_lines, local_lines, False)
+        sm_remote = difflib.SequenceMatcher(None, base_lines, remote_lines)
 
-    def __fetch_llsp3__(self, path):
+        local_changes = {}
+        remote_changes = {}
+
+        for tag, i1, i2, j1, j2 in sm_local.get_opcodes():
+            if tag in ("replace", "insert", "delete"):
+                if tag == "replace" or tag == "insert":
+                    for i, line in enumerate(local_lines[j1:j2]):
+                        local_changes[i1 + i] = [line]
+                elif tag == "delete":
+                    for i in range(i1, i2):
+                        local_changes[i] = [""]
+
+        for tag, i1, i2, j1, j2 in sm_remote.get_opcodes():
+            if tag in ("replace", "insert", "delete"):
+                if tag == "replace" or tag == "insert":
+                    for i, line in enumerate(remote_lines[j1:j2]):
+                        remote_changes[i1 + i] = [line]
+                elif tag == "delete":
+                    for i in range(i1, i2):
+                        remote_changes[i] = [""]
+        
+        max_len = max(len(base_lines), max(local_changes.keys(), default=0) + 1, max(remote_changes.keys(), default=0) + 1)
+
+        for i in range(max_len):
+            base_line = base_lines[i] if i < len(base_lines) else ""
+            local_change = local_changes.get(i, [base_line])
+            remote_change = remote_changes.get(i, [base_line])
+            
+            if local_change == remote_change:
+                merged_lines.extend(local_change)
+            elif local_change != [base_line] and remote_change != [base_line]:
+                conflict = True
+                merged_lines.append(f"<<<<<<< LOCAL\n" + "\n".join(local_change) +
+                                    "\n=======\n" + "\n".join(remote_change) +
+                                    "\n>>>>>>> REMOTE")
+            elif local_change != [base_line]:
+                merged_lines.extend(local_change)
+            elif remote_change != [base_line]:
+                merged_lines.extend(remote_change)
+            else:
+                merged_lines.append(base_line)
+
+        if conflict:
+            print("Merge conflict detected. Manual resolution required.")
+            output_file = PythonFile("merged_code.py")
+            output_file.update_code("\n".join(merged_lines))
+
+        if os.path.exists(base_llsp3.filepath):
+            os.remove(base_llsp3.filepath)
+        if os.path.exists(remote_llsp3.filepath):
+            os.remove(remote_llsp3.filepath)
+
+        return "\n".join(merged_lines)
+
+    def test_merge(self):
+        llsp3path = self.llsp3_file.filepath
+        base_lines = []
+        remote_lines = []
+
+        try:
+            base_raw = self.__fetch_llsp3__(llsp3path, self.__get_base_version__(llsp3path))
+            base_llsp3 = llsp3File("base.llsp3")
+            base_llsp3.write_binary(base_raw)
+            base = base_llsp3.extract_python_code()
+            base_lines = base.splitlines()
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to fetch base version: {e}")
+
+        try:
+            remote_raw = self.__fetch_llsp3__(llsp3path, "origin/main")
+            remote_llsp3 = llsp3File("remote.llsp3")
+            remote_llsp3.write_binary(remote_raw)
+            remote = remote_llsp3.extract_python_code()
+            remote_lines = remote.splitlines()
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to fetch remote version: {e}")
+
+        local = self.llsp3_file.extract_python_code()
+        local_lines = local.splitlines()
+
+        print("LOCAL\n")
+        print(local_lines)
+
+        merged_lines = []
+        conflict = False
+
+        sm_local = difflib.SequenceMatcher(None, base_lines, local_lines, False)
+        sm_remote = difflib.SequenceMatcher(None, base_lines, remote_lines)
+
+        local_changes = {}
+        remote_changes = {}
+
+        for tag, i1, i2, j1, j2 in sm_local.get_opcodes():
+            if tag in ("replace", "insert", "delete"):
+                print('{:7}   base[{}:{}] --> local[{}:{}] {!r:>8} --> {!r}'.format(
+                    tag, i1, i2, j1, j2, base_lines[i1:i2], local_lines[j1:j2]))
+                
+                if tag == "replace" or tag == "insert":
+                    for i, line in enumerate(local_lines[j1:j2]):
+                        local_changes[i1 + i] = [line]
+                elif tag == "delete":
+                    for i in range(i1, i2):
+                        local_changes[i] = [""]
+
+        for tag, i1, i2, j1, j2 in sm_remote.get_opcodes():
+            if tag in ("replace", "insert", "delete"):
+                print('{:7}   base[{}:{}] --> local[{}:{}] {!r:>8} --> {!r}'.format(
+                    tag, i1, i2, j1, j2, base_lines[i1:i2], remote_lines[j1:j2]))
+                
+                if tag == "replace" or tag == "insert":
+                    for i, line in enumerate(remote_lines[j1:j2]):
+                        remote_changes[i1 + i] = [line]
+                elif tag == "delete":
+                    for i in range(i1, i2):
+                        remote_changes[i] = [""]
+
+        print("LOCAL CHANGES\n")
+        print(local_changes)
+        print("REMOTE CHANGES\n")
+        print(remote_changes)
+
+        max_len = max(len(base_lines), max(local_changes.keys(), default=0) + 1, max(remote_changes.keys(), default=0) + 1)
+
+        for i in range(max_len):
+            base_line = base_lines[i] if i < len(base_lines) else ""
+            local_change = local_changes.get(i, [base_line])
+            remote_change = remote_changes.get(i, [base_line])
+            
+            if local_change == remote_change:
+                print("No change detected: {}".format(base_line))
+                merged_lines.extend(local_change)
+            elif local_change != [base_line] and remote_change != [base_line]:
+                conflict = True
+                merged_lines.append(f"<<<<<<< LOCAL\n" + "\n".join(local_change) +
+                                    "\n=======\n" + "\n".join(remote_change) +
+                                    "\n>>>>>>> REMOTE")
+            elif local_change != [base_line]:
+                print("Local change detected: {}".format(local_change))
+                merged_lines.extend(local_change)
+            elif remote_change != [base_line]:
+                print("Remote change detected: {}".format(remote_change))
+                merged_lines.extend(remote_change)
+            else:
+                print("No change detected: {}".format(base_line))
+                merged_lines.append(base_line)
+
+        if conflict:
+            print("Merge conflict detected. Manual resolution required.")
+
+        if os.path.exists(base_llsp3.filepath):
+            os.remove(base_llsp3.filepath)
+        if os.path.exists(remote_llsp3.filepath):
+            os.remove(remote_llsp3.filepath)
+
+        output_file = PythonFile("merged_code.py")
+        output_file.update_code("\n".join(merged_lines))
+
+        return "\n".join(merged_lines)
+
+    def __fetch_llsp3__(self, path, version="HEAD"):
         try:
             # Get the relative path in the Git repo
             git_root = subprocess.run(
@@ -174,7 +406,7 @@ class GitTool:
 
             # Fetch the file's contents from Git
             result = subprocess.run(
-                ["git", "show", "HEAD:{}".format(relative_filepath)],
+                ["git", "show", "{}:{}".format(version, relative_filepath)],
                 capture_output=True,
                 check=True,
             )
@@ -183,7 +415,7 @@ class GitTool:
             print(f"Git error: {e}")
             raise
 
-    def __fetch_python__(self, path):
+    def __fetch_python__(self, path, version="HEAD"):
         """Fetch the Git version of a file (base, current, or other), using the filename only."""
         try:
             # Get the root directory of the Git repository
@@ -198,7 +430,7 @@ class GitTool:
 
             # Fetch the specific version from Git using the relative file path
             result = subprocess.run(
-                ["git", "show", "HEAD:{}".format(relative_filepath)],
+                ["git", "show", "{}:{}".format(version, relative_filepath)],
                 capture_output=True,
                 check=True,
                 text=False,  # Avoid automatic decoding of output
@@ -210,12 +442,17 @@ class GitTool:
         except subprocess.CalledProcessError as e:
             messagebox.showerror("Git Error", f"Failed to fetch Git version: {e}")
             return None
+        
+    def __get_base_version__(self, filepath):
+        base_commit = subprocess.check_output(
+            ["git", "merge-base", "HEAD", "origin/main"]
+        ).decode().strip()
+        return base_commit
 
 
 def convert_and_sync():
     """Handles file conversion and syncing with existing .py files."""
     filepaths = filedialog.askopenfilenames(filetypes=[("LLSP3 Files", "*.llsp3")])
-    print(filepaths)
     if not filepaths:
         return
 
@@ -229,11 +466,11 @@ def convert_and_sync():
         new_llsp3python_code = llsp3_file.extract_python_code()
         if new_llsp3python_code is None:
             continue
-        git_merger = GitTool(llsp3_file, None)
+        git_merger = GitTool(llsp3_file, py_file)
 
-        git_merger.llsp3_merge()
+        git_merger.python_merge()
 
-        py_file.update_code(llsp3_file.extract_python_code())
+        # py_file.update_code(llsp3_file.extract_python_code())
 
     messagebox.showinfo("Success", "Python files merged. Please review the changes.")
 
