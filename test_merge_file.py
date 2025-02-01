@@ -1,5 +1,3 @@
-import time
-
-
-class IDk:
-    pass
+import time
+
+class idk:pass

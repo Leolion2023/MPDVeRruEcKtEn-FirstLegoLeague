@@ -55,6 +55,29 @@ class Llsp3File:
                 os.rmdir(root)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update .llsp3 file: {e}")
+    
+def extract_python_from_llsp3bytes(llsp3_bytes):
+    """Extract Python code from a binary llsp3 file."""
+    try:
+        # Write bytes to a temporary ZIP file
+        temp_file = "temp_llsp3.zip"
+        with open(temp_file, "wb") as f:
+            f.write(llsp3_bytes)
+
+        # Open ZIP and extract projectbody.json
+        with zipfile.ZipFile(temp_file, "r") as zip_ref:
+            if "projectbody.json" in zip_ref.namelist():
+                with zip_ref.open("projectbody.json") as json_file:
+                    project_data = json.load(json_file)
+                    return project_data.get("main", "")
+
+    except zipfile.BadZipFile:
+        print("Error: The provided .llsp3 data is not a valid ZIP archive.")
+    finally:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)  # Clean up temp file
+
+    return None
 
 
 class GitMergeSimulator:
@@ -65,6 +88,7 @@ class GitMergeSimulator:
     def merge(self):
         """Simulates a Git-like merge with conflict handling."""
         diff = list(difflib.ndiff(self.original_code, self.new_code))
+        print(diff)
         merged_lines = []
         conflict_detected = False
 
@@ -84,7 +108,7 @@ class GitMergeSimulator:
             return "\n".join(merged_lines)
 
 
-def fetch_git_version(filepath, version):
+def fetch_git_py(filepath, version):
     """Fetch the Git version of a file (base, current, or other), using the filename only."""
     try:
         # Get the root directory of the Git repository
@@ -94,6 +118,7 @@ def fetch_git_version(filepath, version):
             check=True, 
             text=False  # Avoid automatic decoding of output
         ).stdout
+        print(filepath)
 
         # Extract the filename from the full path
         filename = os.path.basename(filepath)
@@ -114,6 +139,21 @@ def fetch_git_version(filepath, version):
     except subprocess.CalledProcessError as e:
         messagebox.showerror("Git Error", f"Failed to fetch Git version: {e}")
         return None
+
+def fetch_git_llsp3(filepath, version):
+    """Fetch a file's version from Git and return its contents as bytes."""
+    try:
+        # Get the relative path in the Git repo
+        git_root = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, check=True, text=True).stdout.strip()
+        relative_filepath = os.path.relpath(filepath, git_root)
+
+        # Fetch the file's contents from Git
+        result = subprocess.run(["git", "show", f"{version}:{relative_filepath}"], capture_output=True, check=True)
+
+        return extract_python_from_llsp3bytes(result.stdout)
+    except Exception as e:
+        print(f"Git error: {e}")
+        raise e
 
 
 # Global variable to store the current Llsp3File being processed
@@ -140,8 +180,8 @@ def convert_and_sync():
                 existing_code = py_file.read()
 
             # First, fetch the Git versions of both the .py and .llsp3 files
-            base_python_code = fetch_git_version(py_filepath, "HEAD^")
-            base_llsp3_code = fetch_git_version(filepath, "HEAD^")
+            base_python_code = fetch_git_py(py_filepath, "HEAD")
+            base_llsp3_code = fetch_git_llsp3(filepath, "HEAD")
 
             # Compare the base versions of the files with the current ones
             if base_python_code and base_llsp3_code:
@@ -159,6 +199,8 @@ def convert_and_sync():
                     py_file.write(merged_code)
             else:
                 messagebox.showerror("Git Error", "Failed to fetch base Git versions.")
+        else:
+            print("File not used")
 
     messagebox.showinfo("Success", "Python files merged. Please review the changes.")
 
