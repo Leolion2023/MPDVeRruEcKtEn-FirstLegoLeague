@@ -9,12 +9,11 @@ import math
 
 """
 
-Our Personal  COde
+Our Personal Main Code
 
-Here you can also find our specific exerses   and also some exa
+Here you can also find our specific exercises and also some examples.
 
-
-Those are the ports we used for the  tas
+Those are the ports we used for the specific tasks:
 MotorPorts:
     A = 0: MotorRight
     B = 1: Unused
