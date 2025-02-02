@@ -9,12 +9,12 @@ import math
 
 """
 
-Our Personal 
+Our Personal  COde
 
-Here you can also find our specific exercises and also some exa
+Here you can also find our specific exerses   and also some exa
 
 
-Those are the ports we used for the specific tas
+Those are the ports we used for the  tas
 MotorPorts:
     A = 0: MotorRight
     B = 1: Unused
