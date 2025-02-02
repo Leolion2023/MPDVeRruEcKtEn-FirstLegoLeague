@@ -9,9 +9,10 @@ import math
 
 """
 
-Our Personal Main Code
+Our Personal Main Cod
 
-Here you can also find our specific exercises and also some examples.
+Here you can also find our specific exercises and also some examples
+
 
 Those are the ports we used for the specific tasks:
 MotorPorts:
