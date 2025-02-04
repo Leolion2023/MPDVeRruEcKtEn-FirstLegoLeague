@@ -388,6 +388,41 @@ class DriveBase:
         self.addition_state = self.get_addition_state()
         self.attach_addition(False)
 
+    def configure(self, motor_right_port: int = 0, motor_left_port: int = 4, addition_port: int = 3, action_port: int = 5, motor_pair_id: int = 0, wheel_circumference: float = 17.6):
+        """
+            Configure the Motorports and other values
+
+            Konfiguriere die Motorports und andere Werte
+
+            Parameters / Parameter
+            -----------------
+
+            motor_right_port: int = 0
+                The port of the right motor.
+                Der Port des rechten Motors.
+            motor_left_port: int = 4
+                The port of the left motor.
+                Der Port des linken Motors.
+            addition_port: int = 3
+                The port of the addition motor.
+                Der Port des Zusatzmotors.
+            action_right_port: int = 5
+                The port of the right action motor.
+                Der Port des rechten Aktionsmotors.
+            motor_pair_id: int = 0
+                The ID of the motorpair.
+                Die ID des Motorpaares.
+            wheel_circumference: float = 17.6
+                The circumference of the wheels.
+                Der Umfang der Räder.
+        """
+        self.MOTORR = motor_right_port
+        self.MOTORL = motor_left_port
+        self.ADDITION = addition_port
+        self.RIGHT = action_port
+        self.MOTPAIR = motor_pair_id
+        self.WHEELCIRC = wheel_circumference
+
     #########################
     # Complex GyroFunctions #
     #########################
@@ -1173,6 +1208,8 @@ logger = Logger(FULL)
 # ctrl = Controller()
 
 db = DriveBase()
+
+
 
 
 # def main():
