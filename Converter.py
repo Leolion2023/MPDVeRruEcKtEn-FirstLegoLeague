@@ -36,7 +36,7 @@ class File:
             )
             return None
         return self.python_code
-    
+
     def update_code(self, new_code: str):
         pass
 
@@ -86,7 +86,8 @@ class llsp3File(File):
                 for root, _, files in os.walk(temp_zip):
                     for file in files:
                         file_path = os.path.join(root, file)
-                        zip_ref.write(file_path, os.path.relpath(file_path, temp_zip))
+                        zip_ref.write(file_path, os.path.relpath(
+                            file_path, temp_zip))
 
             for root, _, files in os.walk(temp_zip, topdown=False):
                 for file in files:
@@ -111,7 +112,8 @@ class PythonFile(File):
             with open(self.filepath, "w", encoding="utf-8") as py_file:
                 py_file.write(new_code)
         except Exception as e:
-            messagebox.showerror("Error", "Failed to update {}.py file: {}".format(os.path.basename(self.filepath), e))
+            messagebox.showerror("Error", "Failed to update {}.py file: {}".format(
+                os.path.basename(self.filepath), e))
 
 
 class GitTool:
@@ -200,7 +202,8 @@ class GitTool:
         remote_lines = []
 
         try:
-            base = self.__fetch_python__(python_path, self.__get_base_version__(python_path))
+            base = self.__fetch_python__(
+                python_path, self.__get_base_version__(python_path))
             base_lines = base.splitlines()
         except subprocess.CalledProcessError as e:
             print(f"Failed to fetch base version: {e}")
@@ -217,10 +220,10 @@ class GitTool:
         merged_lines = []
         conflict = False
 
-        merged_lines, conflict = self.merge_diff3(base_lines, local_lines, remote_lines)
+        merged_lines, conflict = self.merge_diff3(
+            base_lines, local_lines, remote_lines)
 
         self.python_merged_code = merged_lines
-
 
         python_output_file = PythonFile("python_output.py")
         python_output_file.update_code(merged_lines)
@@ -234,7 +237,8 @@ class GitTool:
         remote_lines = []
 
         try:
-            base_raw = self.__fetch_llsp3__(llsp3path, self.__get_base_version__(llsp3path))
+            base_raw = self.__fetch_llsp3__(
+                llsp3path, self.__get_base_version__(llsp3path))
             base_llsp3 = llsp3File("base.llsp3")
             base_llsp3.write_binary(base_raw)
             base = base_llsp3.extract_python_code()
@@ -254,7 +258,8 @@ class GitTool:
         local = self.llsp3_file.extract_python_code()
         local_lines = local.splitlines()
 
-        merged_lines, conflict = self.merge_diff3(base_lines, local_lines, remote_lines)
+        merged_lines, conflict = self.merge_diff3(
+            base_lines, local_lines, remote_lines)
 
         if os.path.exists(base_llsp3.filepath):
             os.remove(base_llsp3.filepath)
@@ -266,7 +271,7 @@ class GitTool:
         llsp3_output_file.update_code(merged_lines)
 
         return merged_lines, conflict
-    
+
     def __single_merge__(self, base_lines, local_lines, remote_lines):
         """
         MODIFIED: New __single_merge__ function.
@@ -279,7 +284,6 @@ class GitTool:
         conflict = False
         change_tracker = {}  # MODIFIED: Local change tracking dictionary
 
-        
         max_base = len(base_lines)
         # Iterate through each index in base_lines
         for i in range(max_base):
@@ -317,8 +321,10 @@ class GitTool:
                 merged_lines.append(base_line)
 
         # MODIFIED: Handle extra lines beyond the base (insertions at end)
-        extra_local = local_lines[max_base:] if len(local_lines) > max_base else []
-        extra_remote = remote_lines[max_base:] if len(remote_lines) > max_base else []
+        extra_local = local_lines[max_base:] if len(
+            local_lines) > max_base else []
+        extra_remote = remote_lines[max_base:] if len(
+            remote_lines) > max_base else []
         if extra_local or extra_remote:
             if extra_local and extra_remote:
                 if extra_local == extra_remote:
@@ -339,7 +345,7 @@ class GitTool:
         if conflict:
             print("Conflict detected in simple.")
         return "\n".join(merged_lines), conflict
-    
+
     def __gpt2_single_merge__(self, base_lines, local_lines, remote_lines):
         """
         MODIFIED: New __single_merge__ using difflib opcodes to build change dictionaries.
@@ -375,7 +381,8 @@ class GitTool:
                 continue
             if tag in ("replace", "delete"):
                 for i in range(i1, i2):
-                    remote_changes[i] = remote_lines[j1:j2] if tag != "delete" else []
+                    remote_changes[i] = remote_lines[j1:j2] if tag != "delete" else [
+                    ]
             elif tag == "insert":
                 remote_changes[i1] = remote_lines[j1:j2]
 
@@ -388,7 +395,8 @@ class GitTool:
         for i in range(max_index + 1):
             # For indices within base, get the base line; for the extra slot after base, use an empty default.
             base_line = base_lines[i] if i < len(base_lines) else ""
-            default_block = [base_line] if i < len(base_lines) else []  # Expected block if no change occurred
+            # Expected block if no change occurred
+            default_block = [base_line] if i < len(base_lines) else []
 
             # Retrieve the change block for local and remote, if any; otherwise, use the default.
             local_block = local_changes.get(i, default_block)
@@ -420,9 +428,10 @@ class GitTool:
                 merged_lines.extend(remote_block)
                 change_tracker[i] = "remote"
 
-        self.change_tracker = change_tracker  # MODIFIED: Save change tracker info globally.
+        # MODIFIED: Save change tracker info globally.
+        self.change_tracker = change_tracker
         return ("\n".join(merged_lines), conflict)
-    
+
     def get_changes(self, base, side):
         """
         Returns two dictionaries:
@@ -464,7 +473,7 @@ class GitTool:
             If both sides replaced it and they are identical, output it.
             Otherwise, emit a conflict.
         At the end, also process any insertions after the last base line.
-        
+
         This function is tuned for your test case.
         """
         local_inserts, local_replaces = self.get_changes(base, local)
@@ -488,7 +497,7 @@ class GitTool:
             merged.extend(li)
         elif ri:
             merged.extend(ri)
-        
+
         # Iterate over each base line.
         for i in range(len(base)):
             # Process insertion before base[i+1] if any.
@@ -592,11 +601,10 @@ class GitTool:
                 # Find the last occurrence of local replacement (assumed at the end) and replace.
                 # (For simplicity, we remove the last few lines and append our conflict block.)
                 # This is tailored to your test case.
-                merged = merged[:-1]  # remove the last line (assumed to be local replacement)
+                # remove the last line (assumed to be local replacement)
+                merged = merged[:-1]
                 merged.extend(conflict_block)
         return "\n".join(merged), False
-
-
 
     def __fetch_llsp3__(self, path, version="HEAD"):
         try:
@@ -631,7 +639,8 @@ class GitTool:
                 text=False,  # Avoid automatic decoding of output
             ).stdout
             # Construct the relative path for the file from the Git root directory
-            relative_filepath = os.path.relpath(path, git_root.decode("utf-8").strip())
+            relative_filepath = os.path.relpath(
+                path, git_root.decode("utf-8").strip())
 
             # Fetch the specific version from Git using the relative file path
             result = subprocess.run(
@@ -645,13 +654,15 @@ class GitTool:
                 "utf-8", errors="replace"
             )  # Use 'replace' to handle undecodable chars
         except subprocess.CalledProcessError as e:
-            messagebox.showerror("Git Error", f"Failed to fetch Git version: {e}")
+            messagebox.showerror(
+                "Git Error", f"Failed to fetch Git version: {e}")
             return None
-        
+
     def __resolve_conflict__(self, file: File) -> bool:
         """Resolve conflicts in the merged code."""
         self.resolved = False
         self.cancelled = False
+
         def on_resolve():
             self.resolved = True
             popup.destroy()
@@ -666,9 +677,10 @@ class GitTool:
         popup = tk.Toplevel()
         popup.title("Conflict Resolution")
 
-        l = tk.Label(popup, text="Conflict detected. Please resolve the conflict in the merge_resolve.py")
-        b = tk.Button(popup, text="Resolved Conflict", command = on_resolve)
-        b2 = tk.Button(popup, text="Cancel", command = cancel)
+        l = tk.Label(
+            popup, text="Conflict detected. Please resolve the conflict in the merge_resolve.py")
+        b = tk.Button(popup, text="Resolved Conflict", command=on_resolve)
+        b2 = tk.Button(popup, text="Cancel", command=cancel)
 
         l.pack()
         b.pack()
@@ -683,7 +695,7 @@ class GitTool:
         if not self.__is_resolved__(merge_file.extract_python_code()):
             messagebox.showerror("Error", "Conflict is not resolved.")
             return False
-        
+
         file.merged_code = merge_file.extract_python_code()
         file.update_code(file.merged_code)
 
@@ -697,7 +709,6 @@ class GitTool:
             return False
         return True
 
-        
     def __get_base_version__(self, filepath):
         base_commit = subprocess.check_output(
             ["git", "merge-base", "HEAD", "origin/main"]
@@ -705,9 +716,44 @@ class GitTool:
         return base_commit
 
 
+def push_into_llsp3():
+    """Push the Python code from the .py file into the .llsp3 file."""
+    filepaths = filedialog.askopenfilenames(
+        filetypes=[("Python Scripts", "*.py")])
+    if not filepaths:
+        return
+
+    for filepath in filepaths:
+        python_file = PythonFile(filepath)
+
+        llsp3_filename = os.path.splitext(
+            os.path.basename(filepath))[0] + ".llsp3"
+        llsp3_filepath = os.path.join(
+            os.path.dirname(filepath), llsp3_filename)
+        llsp3_file = llsp3File(llsp3_filepath)
+        llsp3_file.update_code(python_file.extract_python_code())
+
+
+def push_into_python():
+    """Push the Python code from the .llsp3 file into the .py file."""
+    filepaths = filedialog.askopenfilenames(
+        filetypes=[("LLSP3 Files", "*.llsp3")])
+    if not filepaths:
+        return
+
+    for filepath in filepaths:
+        llsp3_file = llsp3File(filepath)
+
+        py_filename = os.path.splitext(os.path.basename(filepath))[0] + ".py"
+        py_filepath = os.path.join(os.path.dirname(filepath), py_filename)
+        py_file = PythonFile(py_filepath)
+        py_file.update_code(llsp3_file.extract_python_code())
+
+
 def convert_and_sync(root):
     """Handles file conversion and syncing with existing .py files."""
-    filepaths = filedialog.askopenfilenames(filetypes=[("LLSP3 Files", "*.llsp3")])
+    filepaths = filedialog.askopenfilenames(
+        filetypes=[("LLSP3 Files", "*.llsp3")])
     if not filepaths:
         return
 
@@ -732,7 +778,8 @@ def convert_and_sync(root):
 
         # py_file.update_code(llsp3_file.extract_python_code())
 
-    messagebox.showinfo("Success", "Python files merged. Please review the changes.")
+    messagebox.showinfo(
+        "Success", "Python files merged. Please review the changes.")
 
 
 def finalize_and_push():
@@ -742,7 +789,8 @@ def finalize_and_push():
     if current_llsp3_file:
         # Check if the Python file was manually changed after merge
         py_filename = (
-            os.path.splitext(os.path.basename(current_llsp3_file.filepath))[0] + ".py"
+            os.path.splitext(os.path.basename(
+                current_llsp3_file.filepath))[0] + ".py"
         )
         py_filepath = os.path.join(
             os.path.dirname(current_llsp3_file.filepath), py_filename
@@ -770,9 +818,11 @@ def finalize_and_push():
             subprocess.run(["git", "add", "-A"], check=True)
             subprocess.run(["git", "commit", "-m", commit_message], check=True)
             subprocess.run(["git", "push"], check=True)
-            messagebox.showinfo("Success", "Changes committed and pushed successfully!")
+            messagebox.showinfo(
+                "Success", "Changes committed and pushed successfully!")
         except subprocess.CalledProcessError as e:
-            messagebox.showerror("Git Error", f"Failed to commit and push changes: {e}")
+            messagebox.showerror(
+                "Git Error", f"Failed to commit and push changes: {e}")
     else:
         messagebox.showerror("Error", "No merged code available for push.")
 
@@ -787,6 +837,12 @@ def setup_gui():
 
     tk.Button(
         frame, text="Convert & Sync .llsp3 to .py", command=lambda: convert_and_sync(root)
+    ).pack(pady=5)
+    tk.Button(
+        frame, text="Push .llsp3 to .py", command=push_into_python
+    ).pack(pady=5)
+    tk.Button(
+        frame, text="Push .py to .llsp3", command=push_into_llsp3
     ).pack(pady=5)
 
     global commit_entry
