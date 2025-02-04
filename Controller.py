@@ -1,16 +1,17 @@
 import hub
-import device
 import motor
 import motor_pair
-import runloop
 
 import time
 import math
 
-
-
 """
 
+Our Personal Main Code
+
+Here you can also find our specific exercises and also some examples.
+
+Those are the ports we used for the specific tasks:
 MotorPorts:
     A = 0: MotorRight
     B = 1: Unused
@@ -49,19 +50,19 @@ class Controller:
 
     def __init__(self):
         self._kill_ = False
-        self.logging_level = self.FULL # Setze das Logging-Level hier (FULL, MEDIUM, LOW oder NO)
+        # Setze das Logging-Level hier (FULL, MEDIUM, LOW oder NO)
+        self.logging_level = self.FULL
         self.device = self.BOTH
 
         self.driveBase = DriveBase()
 
-
         logger.info("Started Program", 0)
 
-    def button_check(self, which: int) -> bool:
+    def __button_check__(self, which: int) -> bool:
         """"""
         if which == 0:
             return bool(hub.button.pressed(hub.button.LEFT) or
-                hub.button.pressed(hub.button.RIGHT))
+                        hub.button.pressed(hub.button.RIGHT))
         elif which == 1:
             return bool(hub.button.pressed(hub.button.LEFT))
         elif which == 2:
@@ -70,12 +71,11 @@ class Controller:
             logger.exception("UNKNOWN WHICH STATE", 303)
             return False
 
-
     def kill(self):
         logger.info("Killed program", -1)
         self._kill_ = True
 
-    def run(self):
+    def run_program(self):
         logger.info("Run Program", 1)
         # self.forschungsauftrag_demo()
 
@@ -90,7 +90,8 @@ class Controller:
         logger.info("WAITING", "START")
         time.sleep_ms(500)
         logger.info("WAITING", 10)
-        while not self.button_check(0):pass
+        while not self.__button_check__(0):
+            pass
         self.driveBase.attach_addition(True)
         time.sleep(0.5)
 
@@ -100,7 +101,8 @@ class Controller:
         self.driveBase.reset_null(self.driveBase.RIGHT)
         time.sleep(0.2)
         # motor.run_for_degrees(self.driveBase.RIGHT, -800, 500)
-        self.driveBase.run_motor_degree(self.driveBase.RIGHT, 800, -710, tolerance = 10)
+        self.driveBase.run_motor_degree(
+            self.driveBase.RIGHT, 800, -710, tolerance=10)
         time.sleep(0.1)
         self.driveBase.reset_null(self.driveBase.RIGHT)
 
@@ -108,10 +110,8 @@ class Controller:
         self.connect_addition()
         self.driveBase.gyro_drive(100, 800, 500)
 
-
-
     def collide_testing(self):
-        self.driveBase.gyro_drive(80, 200, 200, avoid_kollision = True)
+        self.driveBase.gyro_drive(80, 200, 200, avoid_collision=True)
         logger.info("Finished", 23)
 
     def gyro_backwards(self):
@@ -123,90 +123,105 @@ class Controller:
 
     def dreizack(self):
         self.driveBase.attach_addition(False)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, 20,-1)            #### Changed to right
-        motor.run_to_absolute_position(5,45,1000,direction=motor.SHORTEST_PATH)
-        while not self.button_check(0):pass
+        self.driveBase.run_motor_duration(20, -1, self.driveBase.RIGHT)
+        motor.run_to_absolute_position(
+            5, 45, 1000, direction=motor.SHORTEST_PATH)
+        while not self.__button_check__(0):
+            pass
         self.driveBase.attach_addition(True)
         time.sleep(0.2)
-        motor.run_to_absolute_position(5,5,1000,direction=motor.SHORTEST_PATH)
+        motor.run_to_absolute_position(
+            5, 5, 1000, direction=motor.SHORTEST_PATH)
         time.sleep(0.2)
-        motor.run_to_absolute_position(5,5,1000,direction=motor.SHORTEST_PATH)
+        motor.run_to_absolute_position(
+            5, 5, 1000, direction=motor.SHORTEST_PATH)
         time.sleep(0.2)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT,300,0.3)                #### Changed to RIGHT
-        motor.stop(5,stop = motor.BRAKE)
-        while not self.button_check(0):pass
+        self.driveBase.run_motor_duration(300, 0.3, self.driveBase.RIGHT)
+        motor.stop(5, stop=motor.BRAKE)
+        while not self.__button_check__(0):
+            pass
         self.driveBase.gyro_drive(30, 500, 100)
         self.driveBase.gyro_turn(90, 100, 100)
         self.driveBase.gyro_drive(60, 500, 100)
         self.driveBase.gyro_turn(-90, 200, 100)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, -100,1) #deploy hai                ###Changed to RIGHT
+        # deploy hai
+        self.driveBase.run_motor_duration(-100, 1, self.driveBase.RIGHT)
         self.driveBase.reset_null(self.driveBase.RIGHT)
-        #self.driveBase.run_motor_duration(1,-300,0.3)
-        motor.run_to_relative_position(self.driveBase.RIGHT, 80, 100)                ###Changed to RIGHT
+        # self.driveBase.run_motor_duration(1,-300,0.3)
+        motor.run_to_relative_position(self.driveBase.RIGHT, 80, 100)
         self.driveBase.gyro_turn(-90, 200, 100)
         self.driveBase.gyro_drive(6, 500, 100)
         self.driveBase.gyro_turn(90, 200, 100)
         self.driveBase.gyro_drive(10, 100, 100)
-        motor.run_to_relative_position(self.driveBase.RIGHT, 100, 200)#take dreizack                ###Changed to RIGHT
-        #self.driveBase.run_motor_duration(1,-300,0.2)
+        motor.run_to_relative_position(
+            self.driveBase.RIGHT, 100, 200)  # take dreizack
+        # self.driveBase.run_motor_duration(1,-300,0.2)
         self.driveBase.gyro_drive(10, -500, -100)
         self.driveBase.gyro_turn(-110, 300, 100)
         self.driveBase.gyro_drive(80, 800, 100)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, 300,0.1)                ###Changed to RIGHT
-        #homebase
-        while not self.button_check(0):pass
+        self.driveBase.run_motor_duration(300, 0.1, self.driveBase.RIGHT)
+        # homebase
+        while not self.__button_check__(0):
+            pass
         self.driveBase.gyro_drive(20, 100, 100)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, -300,0.3)                ###Changed to RIGHT
-        motor.run_to_relative_position(self.driveBase.RIGHT , 90,-300)
+        self.driveBase.run_motor_duration(-300, 0.3, self.driveBase.RIGHT)
+        motor.run_to_relative_position(self.driveBase.RIGHT, 90, -300)
         time.sleep(0.5)
-        self.driveBase.gyro_drive(30,-900, -100)
+        self.driveBase.gyro_drive(30, -900, -100)
         self.driveBase.attach_addition(False)
         time.sleep(0.2)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, 500,2)                ###Changed to RIGHT
+        self.driveBase.run_motor_duration(500, 2, self.driveBase.RIGHT)
 
     def deploy_koralle(self):
         self.driveBase.attach_addition(False)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, 20,-1)                ###Changed to RIGHT
-        motor.run_to_absolute_position(5,45,1000,direction=motor.SHORTEST_PATH)
-        while not self.button_check(0):pass
+        self.driveBase.run_motor_duration(20, -1, self.driveBase.RIGHT)
+        motor.run_to_absolute_position(
+            5, 45, 1000, direction=motor.SHORTEST_PATH)
+        while not self.__button_check__(0):
+            pass
         self.driveBase.attach_addition(True)
         time.sleep(0.2)
-        motor.run_to_absolute_position(5,5,1000,direction=motor.SHORTEST_PATH)
+        motor.run_to_absolute_position(
+            5, 5, 1000, direction=motor.SHORTEST_PATH)
         time.sleep(0.2)
-        motor.run_to_absolute_position(5,5,1000,direction=motor.SHORTEST_PATH)
+        motor.run_to_absolute_position(
+            5, 5, 1000, direction=motor.SHORTEST_PATH)
         time.sleep(0.2)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, 300,0.3)                ###Changed to RIGHT
-        motor.stop(5,stop = motor.BRAKE)
-        while not self.button_check(0):pass
+        self.driveBase.run_motor_duration(300, 0.3, self.driveBase.RIGHT)
+        motor.stop(5, stop=motor.BRAKE)
+        while not self.__button_check__(0):
+            pass
         self.driveBase.gyro_drive(20, 100, 100)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, -300,0.3)                ###Changed to RIGHT
-        motor.run_to_relative_position(self.driveBase.RIGHT,motor.relative_position(self.driveBase.RIGHT) + 90,-300)                ###Changed to RIGHT
+        self.driveBase.run_motor_duration(-300, 0.3, self.driveBase.RIGHT)
+        motor.run_to_relative_position(
+            self.driveBase.RIGHT, motor.relative_position(self.driveBase.RIGHT) + 90, -300)
         time.sleep(0.5)
-        self.driveBase.gyro_drive(30,-900, -100)
+        self.driveBase.gyro_drive(30, -900, -100)
         self.driveBase.attach_addition(False)
         time.sleep(0.2)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, 500,2)                ###Changed to RIGHT
+        self.driveBase.run_motor_duration(500, 2, self.driveBase.RIGHT)
 
     def get_shark(self):
         self.driveBase.attach_addition(False)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, 100,-1)                ###Changed to RIGHT
-        self.driveBase.run_motor_duration(5,100,-1)
-        while not self.button_check(0):pass
+        self.driveBase.run_motor_duration(100, -1, self.driveBase.RIGHT)
+        self.driveBase.run_motor_duration(5, 100, -1)
+        while not self.__button_check__(0):
+            pass
         self.driveBase.attach_addition(True)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, 1000,-1)                ###Changed to RIGHT
+        self.driveBase.run_motor_duration(1000, -1, self.driveBase.RIGHT)
         self.driveBase.gyro_drive(20, 500, 100)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, -1000,-1)                ###Changed to RIGHT
+        self.driveBase.run_motor_duration(-1000, -1, self.driveBase.RIGHT)
         self.driveBase.gyro_drive(45, 500, 100)
-        motor.stop(self.driveBase.RIGHT,stop = motor.BRAKE)                ###Changed to RIGHT
+        motor.stop(self.driveBase.RIGHT, stop=motor.BRAKE)
         self.driveBase.gyro_turn(-90, 100, 100)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, 1000,-1)                ###Changed to RIGHT
-        self.driveBase.gyro_drive(20, 900, 500)#press korallenriff
+        self.driveBase.run_motor_duration(1000, -1, self.driveBase.RIGHT)
+        self.driveBase.gyro_drive(20, 900, 500)  # press korallenriff
         self.driveBase.gyro_drive(14, -500, -100)
-        motor.stop(self.driveBase.RIGHT,stop = motor.BRAKE)                ###Changed to RIGHT
+        motor.stop(self.driveBase.RIGHT, stop=motor.BRAKE)
         self.driveBase.gyro_turn(45, 100, 100)
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, -1000,-1)                ###Changed to RIGHT
-        self.driveBase.gyro_drive(35, 900, 100)#press Hai
-        self.driveBase.run_motor_duration(self.driveBase.RIGHT, 1000,-1)                ###Changed to RIGHT
+        self.driveBase.run_motor_duration(-1000, -1, self.driveBase.RIGHT)
+        self.driveBase.gyro_drive(35, 900, 100)  # press Hai
+        self.driveBase.run_motor_duration(1000, -1, self.driveBase.RIGHT)
         self.driveBase.gyro_drive(30, -500, 100)
         self.driveBase.gyro_turn(-110, 300, 100)
         self.driveBase.attach_addition(False)
@@ -214,39 +229,43 @@ class Controller:
 
     def krake(self):
         self.driveBase.attach_addition(False)
-        motor.run_to_absolute_position(5,45,1000,direction=motor.SHORTEST_PATH)
+        motor.run_to_absolute_position(
+            5, 45, 1000, direction=motor.SHORTEST_PATH)
         logger.info("WAITING", "START")
-        while not self.button_check(0):pass
+        while not self.__button_check__(0):
+            pass
         # runloop.until(self.button_check)
         self.driveBase.attach_addition(True)
-        motor.stop(5,stop = motor.BRAKE)
+        motor.stop(5, stop=motor.BRAKE)
         self.driveBase.gyro_drive(2, 500, 100)
         self.driveBase.gyro_turn(-47, 100, 100)
-        self.driveBase.gyro_drive(50, 500, 1000)#get kraken
-        self.driveBase.gyro_drive(20, -500, -100) #rückwärts??
+        self.driveBase.gyro_drive(50, 500, 1000)  # get kraken
+        self.driveBase.gyro_drive(20, -500, -100)  # rückwärts??
         self.driveBase.gyro_turn(-23, 100, 100)
         self.driveBase.gyro_drive(45, 500, 100)
         self.driveBase.gyro_turn(32, 100, 100)
         self.driveBase.gyro_drive(20, 500, 100)
-        self.driveBase.run_motor_duration(5,68,1.5)# release kraken
-        self.driveBase.run_motor_duration(5,-600,0.5)
-        #self.driveBase.gyro_drive(5, 500, 100)
-        self.driveBase.gyro_turn(-23, 500, 500)#fisch einklappen
-        self.driveBase.gyro_drive(24, 500, 100)#einsammeln item 1
+        self.driveBase.run_motor_duration(
+            68, 1.5, self.driveBase.RIGHT)  # release kraken
+        self.driveBase.run_motor_duration(-600, 0.5, self.driveBase.RIGHT)
+        # self.driveBase.gyro_drive(5, 500, 100)
+        self.driveBase.gyro_turn(-23, 500, 500)  # fisch einklappen
+        self.driveBase.gyro_drive(24, 500, 100)  # einsammeln item 1
         self.driveBase.gyro_turn(-30, 500, 500)
         self.driveBase.gyro_turn(5, 200, 200)
         self.driveBase.gyro_drive(25, 500, 100)
         self.driveBase.gyro_turn(-20, 100, 100)
-        self.driveBase.gyro_drive(10, 500, 100)#einsammeln koralle 1
+        self.driveBase.gyro_drive(10, 500, 100)  # einsammeln koralle 1
         self.driveBase.gyro_turn(-20, 100, 100)
-        self.driveBase.gyro_turn(-30, 20, 20)#verschieben koralle 2
+        self.driveBase.gyro_turn(-30, 20, 20)  # verschieben koralle 2
         self.driveBase.gyro_turn(10, 100, 20)
         self.driveBase.attach_addition(False)
         self.driveBase.gyro_drive(80, 1000, 100)
 
     def taucherin_riff(self):
 
-        motor.run_to_absolute_position(self.driveBase.RIGHT, 0, 600, direction = motor.SHORTEST_PATH)
+        motor.run_to_absolute_position(
+            self.driveBase.RIGHT, 0, 600, direction=motor.SHORTEST_PATH)
         self.connect_addition()
         self.reset_addition_riff()
         logger.debug("Resetted addition riff")
@@ -254,13 +273,13 @@ class Controller:
         self.driveBase.reset_null(self.driveBase.RIGHT)
         pin = self.driveBase.RIGHT
         self.driveBase.gyro_drive(78.5, 600, 400)
-        self.driveBase.gyro_turn(90, 200, 100, rotate_mode = 1)
+        self.driveBase.gyro_turn(90, 200, 100, rotate_mode=1)
         motor.run_to_relative_position(pin, 285, 800)
         time.sleep(0.4)
         self.driveBase.gyro_drive(20, 200, 60)
         motor.run_to_relative_position(pin, 380, 800)
         self.driveBase.gyro_drive(26.5, -300, -200)
-        self.driveBase.gyro_turn(90, -200, -100, rotate_mode = 1)
+        self.driveBase.gyro_turn(90, -200, -100, rotate_mode=1)
         motor.run_to_relative_position(pin, 370, 800)
         time.sleep_ms(200)
         self.driveBase.gyro_drive(7, 300, 300)
@@ -272,7 +291,8 @@ class Controller:
         self.driveBase.gyro_drive(8, -400, -400)
         motor.run_to_relative_position(pin, 200, 800)
         time.sleep_ms(200)
-        self.driveBase.gyro_turn(-13, 200, 100) # Turn before push korallen down
+        # Turn before push korallen down
+        self.driveBase.gyro_turn(-13, 200, 100)
         self.driveBase.gyro_drive(9, 400, 300)
         motor.run_to_relative_position(pin, 0, 900)
         time.sleep_ms(900)
@@ -291,14 +311,14 @@ class Controller:
 
     def nest_auf(self):
 
-        motor_pair.move(self.driveBase.MOTPAIR, 0, velocity = 200)
+        motor_pair.move(self.driveBase.MOTPAIR, 0, velocity=200)
         motor.run_for_degrees(self.driveBase.RIGHT, 300, 1000)
         time.sleep(2)
         motor.set_duty_cycle(self.driveBase.RIGHT, 0)
         motor_pair.stop(self.driveBase.MOTPAIR)
         self.driveBase.gyro_turn(5, 300, 200)
         motor.run_for_degrees(self.driveBase.RIGHT, 70, 300)
-        self.driveBase.run_pair(-300, 1)
+        self.driveBase.gyro_drive(1, -300, -200)
         motor.run_to_relative_position(self.driveBase.RIGHT, 100, 600)
         time.sleep_ms(200)
         self.driveBase.gyro_drive(10, -300, -100)
@@ -308,15 +328,16 @@ class Controller:
         self.driveBase.attach_addition(False)
         self.driveBase.gyro_drive(80, 800, 800)
 
-
     def action_change_debug(self):
         motor.reset_relative_position(self.driveBase.RIGHT, 0)
         while True:
-            if self.button_check(1):
-                self.driveBase.run_motor_duration(self.driveBase.RIGHT, 100, duration = 0)
+            if self.__button_check__(1):
+                self.driveBase.run_motor_duration(
+                    100, 0, self.driveBase.RIGHT)
                 time.sleep(0.2)
-            elif self.button_check(2):
-                self.driveBase.run_motor_duration(self.driveBase.RIGHT, -100, duration = 0)
+            elif self.__button_check__(2):
+                self.driveBase.run_motor_duration(
+                    -100, 0, self.driveBase.RIGHT)
                 time.sleep(0.2)
             else:
                 self.driveBase.stop_motor(self.driveBase.RIGHT)
@@ -330,7 +351,7 @@ class Logger:
     def debug(self, message, *args):
         print("[DEBUG] {}".format(message))
 
-    def info(self, message, code = None, *args):
+    def info(self, message, code=None, *args):
         if code != None:
             hub.light_matrix.write(str(code))
         print("[INFO] {}".format(message))
@@ -340,8 +361,14 @@ class Logger:
         print("[ERROR] {}".format(message))
 
 
-
 class DriveBase:
+    """
+
+        Alle Funktionen mit denen Wir unseren Roboter steuern!
+
+        Diese Klasse in den Code hinzufügen und benutzen.
+
+    """
 
     MOTORR = 0
     ADDITION = 3
@@ -356,7 +383,7 @@ class DriveBase:
         self.gyroSens = hub.motion_sensor
         self.stop = False
 
-        # motor_pair.pair(self.MOTPAIR, self.MOTORL, self.MOTORR)
+        motor_pair.pair(self.MOTPAIR, self.MOTORL, self.MOTORR)
 
         self.addition_state = self.get_addition_state()
         self.attach_addition(False)
@@ -365,28 +392,43 @@ class DriveBase:
     # Complex GyroFunctions #
     #########################
 
-    def gyro_drive(self, distance, mainspeed, stopspeed, brake_start = 0.7, offset = 0, avoid_kollision: bool = False) -> bool:
-        """
-            This is the function that we use to make the robot go forwards or backwards without drifting. It can accelerate, it can slow down and there's also PID. You can set the values
-            in a way where you can either drive until the entered distance has been achieved or until the robot senses a line.
-            Parameters
-            -------------
-            distance: the distance that the robot is supposed to drive. Type: Integer. Default: No default value
-            speed: The speed which the robot is supposed to start at. Type: Integer. Default: No default value
-            mainspeed: The highest speed at which the robot drives. Type: Integer. Default: No default value
-            stopspeed: The speed which the robot achieves at the end of the function. Type: Integer. Default: No default value
-            brakeStart: The value which we use to tell the robot after what percentage of the distance we need to slow down. Type: Float. Default: 0.8
-            offset: The value sends the robot in a direction which is indicated by the value entered. Type: Integer. Default: 0
-            avoid_kollision: Bool whether the driveBase should avoid any kollision, if there is one, turn until there is no more
-        """
+    def gyro_drive(self, distance: float = 100, mainspeed: int = 600, stopspeed: int = 300, brake_start: float = 0.7, offset: int = 0, avoid_collision: bool = False) -> bool:
+        """Drive for specified distance
 
+            Drive the robot for a given distance, it uses the GyroSensor and PID calculations to drive perfectly straight. 
+            The robot can also deccelerate when a distance is reached.
+
+            Fahre den Roboter eine bestimmte Distanz. Die Funktion benutzt den GyroSensor und PID Berechnungen um perfekt geradeaus zu fahren.
+            Der Roboter kann auch abbremsen sobald eine bestimmte Distanz ist erreicht.
+
+            Parameters / Parameter
+            ----------------------
+            distance : int = 100
+                The distance that the robot is supposed to drive.
+                Die Distanz die der Roboter fahren soll.
+            mainspeed: int = 600
+                The maximum speed the robot reaches.
+                Die maximale Geschwindigkeit, die der Roboter erreicht.
+            stopspeed : float = 300
+                The target speed while braking; the minimum speed at the end of the program.
+                Die minimale Geschwindigkeit am Ende des Programms.
+            brake_start : int = 0.7
+                Percentage of the driven distance after which the robot starts braking.
+                Prozentsatz der zurückgelegten Strecke, nach der der Roboter mit dem Bremsen beginnt.
+            offset : int = 0    ---> UNUSED
+                The offset of the gyrovalues.
+                Der Offset von den Gyrowerten.
+            avoid_collision : bool = False    ---> UNUSED
+                If the robot should try to avoid every collision
+                Ob der Roboter versuchen sollte, Kollisionen auszuweichen
+        """
         hub.motion_sensor.reset_yaw(0)
         time.sleep_ms(10)
         motor.reset_relative_position(self.MOTORL, 0)
         motor.reset_relative_position(self.MOTORR, 0)
 
         def get_gyro_value() -> int:
-            return round(hub.motion_sensor.tilt_angles()[0]/ 10)
+            return round(hub.motion_sensor.tilt_angles()[0] / 10)
 
         def get_driven():
             return (
@@ -401,7 +443,8 @@ class DriveBase:
         def full_speed(started) -> bool:
             logger.debug((int(calc_power() / 1000), mainspeed / 100))
             if not time.time() - started > 1:
-                logger.debug("Time False: {} von Now: {} then {}".format(time.time() - started, time.time(), started))
+                logger.debug("Time False: {} von Now: {} then {}".format(
+                    time.time() - started, time.time(), started))
                 return True
             if int(calc_power() / 1000) > mainspeed / 100:
                 logger.debug(True)
@@ -410,9 +453,9 @@ class DriveBase:
                 logger.debug(False)
                 return False
 
-        #Set starting speed of robot
+        # Set starting speed of robot
         speed = mainspeed
-        #Sets PID values
+        # Sets PID values
 
         change = 0
         old_change = 0
@@ -423,26 +466,25 @@ class DriveBase:
 
         timestamp = 0
 
-
         invert = 1
 
-        #Sets values based on user inputs
+        # Sets values based on user inputs
         loop = True
 
-        #Calulation of degrees the motors should turn to
-        #17.6 is wheel circumference in cm. You might need to adapt it
+        # Calulation of degrees the motors should turn to
+        # 17.6 is wheel circumference in cm. You might need to adapt it
         rotate_distance = (distance / self.WHEELCIRC) * 360
         deccelerate_distance = rotate_distance * (1 - brake_start)
 
-        #Inversion of target rotation value for negative values
+        # Inversion of target rotation value for negative values
         if speed < 0:
             invert = -1
 
-        #Calculation of braking point
+        # Calculation of braking point
         brake_start_value = brake_start * rotate_distance
         driven_distance = get_driven()
 
-        motor_pair.move(self.MOTPAIR, 0, velocity = int(speed))
+        motor_pair.move(self.MOTPAIR, 0, velocity=int(speed))
         started_time = time.time()
 
         power = calc_power()
@@ -450,7 +492,7 @@ class DriveBase:
 
         while loop:
 
-            #Calculation of driven distance and PID values
+            # Calculation of driven distance and PID values
             old_driven_distance = driven_distance
             driven_distance = get_driven()
             power = calc_power()
@@ -461,10 +503,10 @@ class DriveBase:
             p_regler = pids[0]
             i_regler = pids[1]
             d_regler = pids[2]
-            change = get_gyro_value() #yaw angle used due to orientation of the self.hub
+            change = get_gyro_value()  # yaw angle used due to orientation of the self.hub
 
-
-            curren_steering = (change * p_regler + integral * i_regler + d_regler * (change - old_change))
+            curren_steering = (change * p_regler + integral *
+                               i_regler + d_regler * (change - old_change))
             # curren_steering = 0
 
             curren_steering = max(-100, min(curren_steering, 100))
@@ -473,19 +515,21 @@ class DriveBase:
             integral += change - old_change
             old_change = change
 
-
-            #Calculation of speed based on acceleration and braking, calculation of steering value for robot to drive perfectly straight
+            # Calculation of speed based on acceleration and braking, calculation of steering value for robot to drive perfectly straight
             if distance <= 0:
                 speed = mainspeed
             else:
-                speed = self.speed_calculation(speed, deccelerate_distance, brake_start_value, int(driven_distance), int(old_driven_distance), mainspeed = mainspeed, stopspeed = stopspeed)
+                speed = self.speed_calculation(speed, deccelerate_distance, brake_start_value, int(
+                    driven_distance), int(old_driven_distance), mainspeed=mainspeed, stopspeed=stopspeed)
                 braking = True if driven_distance > brake_start_value else False
                 curren_steering = 0 if braking else curren_steering
 
-            if avoid_kollision:
-                self.around_kollision(timestamp, power, old_power, invert * int(curren_steering), int(speed))
+            if avoid_collision:
+                self.around_kollision(
+                    timestamp, power, old_power, invert * int(curren_steering), int(speed))
             else:
-                motor_pair.move(self.MOTPAIR, invert * int(curren_steering), velocity = int(speed))
+                motor_pair.move(self.MOTPAIR, invert *
+                                int(curren_steering), velocity=int(speed))
             # old_power = power
 
             if distance <= 0:
@@ -494,18 +538,40 @@ class DriveBase:
                     motor_pair.stop(self.MOTPAIR)
                     self.stop = False
             elif rotate_distance < driven_distance:
-                    loop = False
-                    motor_pair.stop(self.MOTPAIR)
+                loop = False
+                motor_pair.stop(self.MOTPAIR)
             time.sleep(0.1)
 
         return True
 
+    def gyro_turn(self, angle: int = 90, mainspeed: int = 300, stopspeed: int = 200, brake_start: float = 0.7, rotate_mode: int = 0, avoid_collision: bool = False) -> bool:
+        """Rotate Robot to Angle using Gyrosensor
 
-    def gyro_turn(self, angle: int, mainspeed: int, stopspeed: int, brake_start: float = 0.7, rotate_mode: int = 0, avoid_kollision: bool = False) -> bool:
-        """
             Turn the Robot to a given Angle, use Gyro-Sensor to check if angle is reached. Gyro is used for better stopping
-            angle: To which angle Robot should turn to. Type: Integer
-            mainspeed: The Speed
+
+            Drehe Roboter um eine gegebene Gradzahl, benutze den GyroSensor um die genaue Gradzahl zu überprüfen.
+            Kann durch den GyroSensor abbremsen.
+
+            Parameters / Parameter
+            ----------------------
+            angle : int = 90
+                The angle the robot should turn for.
+                Die Gradzahl um die sich der Roboter drehen soll
+            mainspeed: int = 300
+                The maximum speed the robot reaches.
+                Die maximale Geschwindigkeit, die der Roboter erreicht.
+            stopspeed : float = 200
+                The target speed while braking; the minimum speed at the end of the program.
+                Die Zielgeschwindigkeit beim Bremsen; die minimale Geschwindigkeit am Ende des Programms.
+            brake_start : int = 0.7
+                Percentage of the driven distance after which the robot starts braking.
+                Prozentsatz der zurückgelegten Strecke, nach dem der Roboter mit dem Bremsen beginnt.
+            rotate_mode : int = 0
+                The turning mode: normal_turn[0] or tank_turn[1].
+                Der Drehmodus: normal_turn[0] oder tank_turn[1].
+            avoid_collision : bool = False
+                If the robot should try to avoid every collision
+                Ob der Roboter versuchen sollte, Kollisionen auszuweichen
         """
 
         self.gyroSens.reset_yaw(0)
@@ -526,7 +592,6 @@ class DriveBase:
 
         deccelerate_distance = abs(angle * (1 - brake_start))
 
-
         loop = True
         brake_start_value = (angle + 0) * brake_start
 
@@ -535,12 +600,14 @@ class DriveBase:
 
         while loop:
             rotated_distance = self.gyroSens.tilt_angles()[0] / 10
-            speed = self.speed_calculation(speed, int(deccelerate_distance), brake_start_value, int(rotated_distance), int(self.old_rotated), mainspeed = mainspeed, stopspeed = stopspeed)
+            speed = self.speed_calculation(speed, int(deccelerate_distance), brake_start_value, int(
+                rotated_distance), int(self.old_rotated), mainspeed=mainspeed, stopspeed=stopspeed)
 
             # Checking for variants
             # Both Motors turn, robot moves on the spot
             if rotate_mode == 0:
-                motor_pair.move_tank(self.MOTPAIR, int(speed) * steering, -int(speed) * steering)
+                motor_pair.move_tank(self.MOTPAIR, int(
+                    speed) * steering, -int(speed) * steering)
 
             # Only outer motor turns, robot has a wide turning radius
             elif rotate_mode == 1:
@@ -552,14 +619,13 @@ class DriveBase:
             self.old_rotated = rotated_distance
 
             if abs(angle) <= abs(rotated_distance - 0):
-                logger.debug((abs(angle), 0, rotated_distance, abs(rotated_distance - 0)))
+                logger.debug((abs(angle), 0, rotated_distance,
+                             abs(rotated_distance - 0)))
                 loop = False
                 break
         motor.stop(self.MOTORL)
         motor.stop(self.MOTORR)
         return True
-
-
 
     def till_colide(self, speed):
         def cycl() -> float:
@@ -577,23 +643,37 @@ class DriveBase:
 
     def around_kollision(self, timestamp, power, old_power, steering, speed):
         # logger.debug((timestamp, power, old_power))
-        motor_pair.move(self.MOTPAIR, steering, velocity = speed)
-
+        motor_pair.move(self.MOTPAIR, steering, velocity=speed)
 
     #######################
     # Simple Interactions #
     #######################
 
     def run_motor_duration(self, speed: int = 500, duration: float = 5, *ports: int) -> bool:
-        """
-            Run the given Motor
-            motor_port: The Motor port which is being controlled
-            speed: how fast the Motor should turn
-            duration: how long the motor should run, if <= 0 no stopping
+        """Run the given Motor
+
+            Start the given ports for a specified time duration.
+            If the duration is <= 0 do not stop.
+
+            Starte die gegebenen ports für eine angegebene Zeit.
+            Wenn die Zeit <= 0 ist, stoppt der Motor nicht.
+
+            Parameters / Parameter
+            -----------------
+
+            speed: int = 500
+                How fast the motor should turn
+                Wie schnell sich der Motor drehen soll
+            duration: float = 5
+                How long the motor should run, if <= 0 no stopping
+                Wie lange der Motor sich drehen soll, wenn <= 0 stoppt er nicht
+            ports: int
+                The ports which will be controlled, needs to be specified, otherwise throws Error
+                Die Ports die gesteuert werden sollen, muss angegeben sein, sonst kommt ein Fehler
         """
         if len(ports) == 0:
-                logger.exception("Please give ports", 40)
-                return False
+            logger.exception("Please give ports", 40)
+            return False
         ports_list = list(ports)
         print(ports_list)
 
@@ -603,19 +683,35 @@ class DriveBase:
             if duration > 0:
                 time.sleep(duration)
                 for port in ports_list:
-                    motor.stop(port, stop = motor.SMART_COAST)
+                    motor.stop(port, stop=motor.SMART_COAST)
             return True
         except:
-            logger.exception("Given unavailable port {}".format(str(ports)), 421)
+            logger.exception(
+                "Given unavailable port {}".format(str(ports)), 421)
             return False
 
     def run_motor_degree(self, speed: int = 500, degree: float = 90, *ports: int, tolerance: float = 5) -> bool:
-        """
-            Run the given Motor
-            motor_port: The Motor port which is being controlled
-            speed: how fast the Motor should turn
-            degree: how much degree the motor should turn
-            tolerance: acceptable deviation from the target position in degrees
+        """Run the given Motor
+
+            Start the given ports for a specified angle.
+
+            Starte die gegebenen ports für eine angegeben Gradzahl.
+
+            Parameters / Parameter
+            -----------------
+
+            speed: int = 500 [degree/second]
+                How fast the motor should turn
+                Wie schnell sich der Motor drehen soll
+            angle: float = 5 [degree]
+                How much the motor should turn
+                Wie viel sich der Motor drehen soll
+            ports: int
+                The ports which will be controlled, needs to be specified, otherwise throws Error
+                Die Ports die gesteuert werden sollen, muss angegeben sein, sonst kommt ein Fehler
+            tolerance: float = 5
+                The tolerance the motor checks for between the given and measured angle.
+                Die Toleranz der Motor überprüft zwischen der gegebenen und gemessenen Gradzahl
         """
         def reached() -> bool:
             if abs(current_pos - target_pos) <= tolerance:
@@ -627,18 +723,19 @@ class DriveBase:
             if degree > 0:
                 invert = 1
             else:
-                invert =-1
+                invert = -1
 
             ports_list = [port for port in ports]
             if len(ports) == 0:
                 logger.exception("Please give ports", 40)
                 return False
-            
+
             target_pos = degree
 
             for port in ports_list:
-                start_pos = motor.relative_position(port)# Startposition speichern
-                motor.run(port, invert * speed)# Motor starten
+                start_pos = motor.relative_position(
+                    port)  # Startposition speichern
+                motor.run(port, invert * speed)  # Motor starten
                 # Zielposition berechnen
                 target_pos = start_pos + degree
 
@@ -647,12 +744,13 @@ class DriveBase:
                     current_pos = motor.relative_position(port)
                     if reached():
                         ports_list.remove(port)
-                        motor.stop(port, stop = motor.SMART_COAST)
+                        motor.stop(port, stop=motor.SMART_COAST)
                 if len(ports_list) == 0:
                     break
             return True
         except Exception as e:
-            logger.exception("Error with motor port(s) {}: {}".format(str(ports), e), 421)
+            logger.exception(
+                "Error with motor port(s) {}: {}".format(str(ports), e), 421)
             return False
 
     def run_action_duration(self, speed: int = 360, duration: float = 5) -> bool:
@@ -744,7 +842,7 @@ class DriveBase:
             else:
                 logger.debug(1)
                 return 1
-        
+
         ports_list = [port for port in ports]
         if len(ports) == 0:
             logger.exception("Please give ports", 40)
@@ -753,7 +851,8 @@ class DriveBase:
             for port in ports_list:
                 motor.run(port, invert(port) * speed)
         except Exception as e:
-            logger.exception("run to absolute position had following error: {}".format(e), 12)
+            logger.exception(
+                "run to absolute position had following error: {}".format(e), 12)
             return False
         while True:
             for port in ports_list:
@@ -765,9 +864,11 @@ class DriveBase:
                     motor.stop(port)
                     ports_list.remove(port)
                 elif position == 0 and pos in range(position, position + 5):
-                    print("finish {}".format((motor.absolute_position(port) + 360) % 360))
+                    print("finish {}".format(
+                        (motor.absolute_position(port) + 360) % 360))
                     motor.stop(port)
-                    print("finish {}".format((motor.absolute_position(port) + 360) % 360))
+                    print("finish {}".format(
+                        (motor.absolute_position(port) + 360) % 360))
                     ports_list.remove(port)
             if len(ports_list) == 0:
                 break
@@ -825,14 +926,15 @@ class DriveBase:
                 motor.run(port, invert(port) * speed)
                 pass
         except Exception as e:
-            logger.exception("run to relative position had following error: {}".format(e), 12)
+            logger.exception(
+                "run to relative position had following error: {}".format(e), 12)
             return False
         while True:
             for port in ports_list:
                 current_pos = motor.relative_position(port)
                 if reached():
                     ports_list.remove(port)
-                    motor.stop(port, stop = motor.SMART_COAST)
+                    motor.stop(port, stop=motor.SMART_COAST)
             if len(ports_list) == 0:
                 break
         return True
@@ -852,18 +954,19 @@ class DriveBase:
         """
         old_state = self.get_addition_state()
         if attach and not old_state:
-            motor.run_to_absolute_position(3, 95, 1000, direction = motor.CLOCKWISE)
+            motor.run_to_absolute_position(
+                3, 95, 1000, direction=motor.CLOCKWISE)
             return True
         elif not attach and old_state:
-            motor.run_to_absolute_position(3, 0, 1000, direction = motor.COUNTERCLOCKWISE)
+            motor.run_to_absolute_position(
+                3, 0, 1000, direction=motor.COUNTERCLOCKWISE)
             return True
         else:
             return False
 
-
     def reset_null(self, *ports: int):
         """Reset given motor to zero
-        
+
             Reset the position of a given motor to absolute position zero.
 
             Setze die Position von einem gegebenen Motor auf die absolute Position Null.
@@ -872,7 +975,7 @@ class DriveBase:
             ------
 
             ports: list[int]
-        
+
         """
         for port in ports:
             motor.reset_relative_position(port, 0)
@@ -895,10 +998,9 @@ class DriveBase:
                 motor.stop(port)
             return True
         except OSError:
-            logger.exception("Given unavailable port(s) {}".format(str(ports)), 621)
+            logger.exception(
+                "Given unavailable port(s) {}".format(str(ports)), 621)
             return False
-
-
 
     #########################
     # Calculating Functions #
@@ -927,12 +1029,14 @@ class DriveBase:
             self.addition_state = False
             return False
         else:
-            motor.run_to_absolute_position(3, 0, 1000, direction = motor.COUNTERCLOCKWISE)
-            logger.debug("State {}° inbetweeen, open completely".format(motor.absolute_position(3)))
+            motor.run_to_absolute_position(
+                3, 0, 1000, direction=motor.COUNTERCLOCKWISE)
+            logger.debug("State {}° inbetweeen, open completely".format(
+                motor.absolute_position(3)))
             self.addition_state = False
             return False
 
-    def speed_calculation(self, speed: int, deccelerate_distance: int, brake_start_value: float, driven: int, old_driven: int, mode: int = 0, rotate_mode: int = 0, mainspeed: int = 300, stopspeed: int = 300):
+    def speed_calculation(self, speed: int, deccelerate_distance: float, brake_start_value: float, driven: int, old_driven: int, mode: int = 0, rotate_mode: int = 0, mainspeed: int = 300, stopspeed: int = 300):
         """Calculating the speed depending on all given parameters
 
             Used to calculate all the speeds in our programs.
@@ -946,7 +1050,7 @@ class DriveBase:
             speed : int
                 The current speed of the robot.
                 Die aktuelle Geschwindigkeit des Roboters.
-            deccelerate_distance: int
+            deccelerate_distance: float
                 The distance at which the robot starts to deccelerate.
                 Die Distanz, ab welcher der Roboter anfängt zu bremsen.
             brakeStartValue : float
@@ -972,20 +1076,19 @@ class DriveBase:
                 Die Zielgeschwindigkeit beim Bremsen; die minimale Geschwindigkeit am Ende des Programms.
         """
 
-
         if rotate_mode == 1:
             if mainspeed in range(-300, 300):
                 return mainspeed
             else:
                 return int(math.copysign(1, mainspeed)) * 300
 
-
         if mode == 0:
             deccelerate_distance = max(deccelerate_distance, 1)
-            sub_speed_per_degree = (mainspeed - stopspeed) / deccelerate_distance
+            sub_speed_per_degree = (
+                mainspeed - stopspeed) / deccelerate_distance
 
-
-            subtraction = (abs(driven) - abs(old_driven) if abs(driven) - abs(old_driven) >= 1 else 1) * sub_speed_per_degree
+            subtraction = (abs(driven) - abs(old_driven) if abs(driven) -
+                           abs(old_driven) >= 1 else 1) * sub_speed_per_degree
 
             if abs(driven) > abs(brake_start_value):
 
@@ -995,9 +1098,11 @@ class DriveBase:
             return speed
         else:
             deccelerate_distance = max(deccelerate_distance, 1)
-            sub_speed_per_degree = (mainspeed - stopspeed) / deccelerate_distance
+            sub_speed_per_degree = (
+                mainspeed - stopspeed) / deccelerate_distance
 
-            subtraction = (abs(driven) - abs(old_driven) if abs(driven) - abs(old_driven) >= 1 else 1) * sub_speed_per_degree
+            subtraction = (abs(driven) - abs(old_driven) if abs(driven) -
+                           abs(old_driven) >= 1 else 1) * sub_speed_per_degree
 
             if abs(driven) > abs(brake_start_value):
                 if abs(speed) > abs(stopspeed):
@@ -1018,6 +1123,7 @@ class DriveBase:
         """
 
         speed = abs(speed)
+
         def pRegler():
             return (
                 14.59
@@ -1040,7 +1146,6 @@ class DriveBase:
                 + 2.14583333e-16 * speed**6
             )
 
-
         if speed > 0:
             pids = (pRegler(), iRegler(), 1)
         else:
@@ -1058,14 +1163,17 @@ class DriveBase:
     def convert_abs(self, abs_pos: int = 0) -> int:
         return (abs_pos + 360) % 360
 
+
 def convert_abs(abs_pos: int = 0) -> int:
-        return (abs_pos + 360) % 360
+    return (abs_pos + 360) % 360
+
 
 logger = Logger(FULL)
 
 # ctrl = Controller()
 
 db = DriveBase()
+
 
 # def main():
 #     ctrl.run()
@@ -1079,7 +1187,7 @@ def testing():
     # db.run_action_degree()
     print("Now to abs: {}".format(convert_abs(-170)))
 
-    motor.run_to_absolute_position(5, 0, 300, direction = motor.CLOCKWISE)
+    motor.run_to_absolute_position(5, 0, 300, direction=motor.CLOCKWISE)
     # time.sleep(1)
     db.run_to_absolute_position(0, 500, 5)
     print(convert_abs(motor.absolute_position(5)))
@@ -1087,6 +1195,7 @@ def testing():
     # db.run_to_relative_position(200, 500, 5)
     db.attach_addition(True)
     db.attach_addition(False)
+
 
 # Start the main async function
 if __name__ == "__main__":
