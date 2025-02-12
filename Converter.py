@@ -797,6 +797,7 @@ def finalize_and_push():
         messagebox.showinfo(
             "Success", "Changes committed and pushed successfully!")
         commit_entry.delete(0, tk.END)
+        frame.focus_set()
     except subprocess.CalledProcessError as e:
         messagebox.showerror(
             "Git Error", f"Failed to commit and push changes: {e}")
@@ -826,6 +827,7 @@ def setup_gui():
     root = tk.Tk()
     root.title("LLSP3 Sync Tool")
 
+    global frame
     frame = tk.Frame(root, padx=10, pady=10)
     frame.pack(fill = "both")
 
