@@ -796,6 +796,7 @@ def finalize_and_push():
         subprocess.run(["git", "push"], check=True)
         messagebox.showinfo(
             "Success", "Changes committed and pushed successfully!")
+        commit_entry.insert(0, "")
     except subprocess.CalledProcessError as e:
         messagebox.showerror(
             "Git Error", f"Failed to commit and push changes: {e}")
@@ -842,7 +843,7 @@ def setup_gui():
     commit_entry = create_placeholder_entry(frame, "Enter commit message")
     commit_entry.pack(pady=5)
 
-    tk.Button(frame, text="Push Changes", command=finalize_and_push).pack(
+    tk.Button(frame, text="Push Changes", command = lambda: finalize_and_push()).pack(
         pady=5
     )
 
