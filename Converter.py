@@ -784,47 +784,21 @@ def convert_and_sync(root):
 
 def finalize_and_push():
     """Finalize the merge and push the changes back to both the Python file and the .llsp3 archive."""
-    global current_llsp3_file
+    # Final Git commit and push after synchronization.
+    commit_message = commit_entry.get()
+    if not commit_message:
+        messagebox.showerror("Error", "Commit message cannot be empty.")
+        return
 
-    if current_llsp3_file:
-        # Check if the Python file was manually changed after merge
-        py_filename = (
-            os.path.splitext(os.path.basename(
-                current_llsp3_file.filepath))[0] + ".py"
-        )
-        py_filepath = os.path.join(
-            os.path.dirname(current_llsp3_file.filepath), py_filename
-        )
-
-        with open(py_filepath, "r", encoding="utf-8") as py_file:
-            user_modified_code = py_file.read()
-
-        # If user modified the Python file, use it instead of the merged code
-        if user_modified_code != current_llsp3_file.merged_code:
-            merged_code = user_modified_code
-        else:
-            merged_code = current_llsp3_file.merged_code
-
-        # Update the .llsp3 file with the final code (whether it's the merged code or user's manual change)
-        current_llsp3_file.update_code(merged_code)
-
-        # Final Git commit and push after synchronization.
-        commit_message = commit_entry.get()
-        if not commit_message:
-            messagebox.showerror("Error", "Commit message cannot be empty.")
-            return
-
-        try:
-            subprocess.run(["git", "add", "-A"], check=True)
-            subprocess.run(["git", "commit", "-m", commit_message], check=True)
-            subprocess.run(["git", "push"], check=True)
-            messagebox.showinfo(
-                "Success", "Changes committed and pushed successfully!")
-        except subprocess.CalledProcessError as e:
-            messagebox.showerror(
-                "Git Error", f"Failed to commit and push changes: {e}")
-    else:
-        messagebox.showerror("Error", "No merged code available for push.")
+    try:
+        subprocess.run(["git", "add", "-A"], check=True)
+        subprocess.run(["git", "commit", "-m", commit_message], check=True)
+        subprocess.run(["git", "push"], check=True)
+        messagebox.showinfo(
+            "Success", "Changes committed and pushed successfully!")
+    except subprocess.CalledProcessError as e:
+        messagebox.showerror(
+            "Git Error", f"Failed to commit and push changes: {e}")
 
 
 def setup_gui():
