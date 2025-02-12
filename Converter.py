@@ -796,7 +796,7 @@ def finalize_and_push():
         subprocess.run(["git", "push"], check=True)
         messagebox.showinfo(
             "Success", "Changes committed and pushed successfully!")
-        commit_entry.insert(0, "")
+        commit_entry.delete(0, tk.END)
     except subprocess.CalledProcessError as e:
         messagebox.showerror(
             "Git Error", f"Failed to commit and push changes: {e}")
