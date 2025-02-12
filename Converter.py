@@ -799,6 +799,25 @@ def finalize_and_push():
     except subprocess.CalledProcessError as e:
         messagebox.showerror(
             "Git Error", f"Failed to commit and push changes: {e}")
+        
+def create_placeholder_entry(parent, placeholder_text):
+    entry = tk.Entry(parent, fg="grey", width = 50)
+    entry.insert(0, placeholder_text)
+
+    def on_focus_in(event):
+        if entry.get() == placeholder_text:
+            entry.delete(0, tk.END)
+            entry.config(fg="black")
+
+    def on_focus_out(event):
+        if entry.get() == "":
+            entry.insert(0, placeholder_text)
+            entry.config(fg="grey")
+
+    entry.bind("<FocusIn>", on_focus_in)
+    entry.bind("<FocusOut>", on_focus_out)
+
+    return entry
 
 
 def setup_gui():
@@ -807,7 +826,7 @@ def setup_gui():
     root.title("LLSP3 Sync Tool")
 
     frame = tk.Frame(root, padx=10, pady=10)
-    frame.pack()
+    frame.pack(fill = "both")
 
     tk.Button(
         frame, text="Convert & Sync .llsp3 to .py", command=lambda: convert_and_sync(root)
@@ -820,11 +839,10 @@ def setup_gui():
     ).pack(pady=5)
 
     global commit_entry
-    commit_entry = tk.Entry(frame, width=50)
+    commit_entry = create_placeholder_entry(frame, "Enter commit message")
     commit_entry.pack(pady=5)
-    commit_entry.insert(0, "Enter commit message")
 
-    tk.Button(frame, text="Finalize & Push Changes", command=finalize_and_push).pack(
+    tk.Button(frame, text="Push Changes", command=finalize_and_push).pack(
         pady=5
     )
 
