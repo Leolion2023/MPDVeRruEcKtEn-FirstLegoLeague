@@ -793,7 +793,7 @@ def finalize_and_push():
     try:
         subprocess.run(["git", "add", "-A"], check=True)
         subprocess.run(["git", "commit", "-m", commit_message], check=True)
-        output = subprocess.check_output(["git", "push"], check=True)
+        output = subprocess.check_output(["git", "push"])
         import time
         time.sleep(1)
         print(output)
