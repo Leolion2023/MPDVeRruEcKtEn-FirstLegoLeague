@@ -1,4 +1,19 @@
 """
+
+    def reset_addition_riff(self):
+        motor.run_for_degrees(self.driveBase.RIGHT, 10, 100000)
+        time.sleep(0.5)
+        self.driveBase.reset_null(self.driveBase.RIGHT)
+        time.sleep(0.2)
+        # motor.run_for_degrees(self.driveBase.RIGHT, -800, 500)
+        self.driveBase.run_motor_degree(self.driveBase.RIGHT, 800, -710, tolerance=10)
+        time.sleep(0.1)
+        self.driveBase.reset_null(self.driveBase.RIGHT)
+
+    def collect_all(self):
+        db = self.driveBase
+        db.till_colide(500)
+        db.till_color(-300, 2, 600)
     def drive_testing(self, speed):
         self.driveBase.gyro_drive(100, speed, speed - 100)
         self.driveBase.gyro_drive(50, -speed, -speed - 100)
@@ -15,6 +30,40 @@
         self.driveBase.gyro_drive(50, speed, speed - 100)
         self.driveBase.gyro_drive(50, -speed, -speed - 100)
         self.driveBase.gyro_drive(50, -speed, -speed - 100)
+
+    def krake(self):
+        db = self.driveBase
+        db.attach_addition(False)
+        motor.run_to_absolute_position(5, 45, 1000, direction=motor.SHORTEST_PATH)
+        logger.info("WAITING", "START")
+        while not self.__button_check__(0):
+            pass
+        db.attach_addition(True)
+        motor.stop(5, stop=motor.BRAKE)
+        db.gyro_drive(2, 500, 100)
+        db.gyro_turn(-47, 100, 100)
+        db.gyro_drive(50, 500, 1000) # get kraken
+        db.gyro_drive(20, -500, -100) # rückwärts??
+        db.gyro_turn(-23, 100, 100)
+        db.gyro_drive(45, 500, 100)
+        db.gyro_turn(32, 100, 100)
+        db.gyro_drive(20, 500, 100)
+        db.run_motor_duration(68, 1.5, db.RIGHT)# release kraken | open gate
+        db.run_motor_duration(-600, 0.5, db.RIGHT) # close gate
+        # db.gyro_drive(5, 500, 100)
+        # db.gyro_turn(-23, 500, 500) # fisch einklappen| will be done later on
+        db.gyro_turn(-10, 300, 200)
+        db.gyro_drive(24, 500, 100) # einsammeln item 1
+        db.gyro_turn(-30, 500, 500)
+        db.gyro_turn(5, 200, 200)
+        db.gyro_drive(25, 500, 100)
+        db.gyro_turn(-20, 100, 100)
+        db.gyro_drive(10, 500, 100)# einsammeln koralle 1
+        db.gyro_turn(-20, 100, 100)
+        db.gyro_turn(-30, 20, 20)# verschieben koralle 2
+        db.gyro_turn(10, 100, 20)
+        db.attach_addition(False)
+        db.gyro_drive(80, 1000, 100)
 
 
     def collide_testing(self):
