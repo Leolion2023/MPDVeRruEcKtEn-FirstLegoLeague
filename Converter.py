@@ -793,10 +793,10 @@ def finalize_and_push():
     try:
         subprocess.run(["git", "add", "-A"], check=True)
         subprocess.run(["git", "commit", "-m", commit_message], check=True)
-        subprocess.run(["git", "push"], check=True)
-        messagebox.showinfo(
-            "Success", "Changes committed and pushed successfully!")
-        commit_entry.delete(0, tk.END)
+        output = subprocess.check_output(["git", "push"], check=True)
+        import time
+        time.sleep(1)
+        print(output)
         frame.focus_set()
     except subprocess.CalledProcessError as e:
         messagebox.showerror(
