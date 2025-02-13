@@ -55,11 +55,11 @@ class Controller:
         # Setze das Logging-Level hier (FULL, MEDIUM, LOW oder NO)
         self.logging_level = self.FULL
         self.device = self.BOTH
+        self.turn_index = 0
 
         self.driveBase = DriveBase()
 
         logger.info("Started Program", 0)
-
 
     #############
     # Internals #
@@ -105,48 +105,55 @@ class Controller:
     def run_program(self):
         logger.info("Run Program", 1)
 
-        self.test_gyro_turn()
-        # self.collect_items_krake()
+        # self.test_gyro_turn()
+        self.collect_items_krake()
         # self.flagge_alignment()
         # self.probe_push_up()
         # self.do_nest()
         # self.test_rotating()
+        # self.artificial_habitat()
 
     ########################
     # Tasks for Robot Game #
     ########################
-    
+    def debug_wait(self, *args):
+        self.turn_index += 1
+        logger.info("Turn {}".format(self.turn_index))
+        self.__connect_addition__()
+
     def collect_items_krake(self):
         db = self.driveBase
         db.run_action_duration(-200, 0)
         self.__connect_addition__()
         db.stop_motor(db.ADDITION)
 
-        db.gyro_turn(-45, 200, 60, rotate_mode = 1)   ##
-        db.gyro_drive(47, 900, 500, 0.9)
+        db.gyro_turn(-45, 200, 60, rotate_mode=1)
+        db.gyro_drive(47, 600, 100)
         db.gyro_drive(25, -600, -100)
-        db.gyro_turn(37, 200, 60)
-        db.gyro_drive(51, 600, 100, 0.8)   ## drive forward to next task
-        db.gyro_turn(-87, 200, 60)  ## turn to next task
-        db.gyro_drive(15, -400, -200) ## push into task
-        db.gyro_drive(10, 400, 200)  ## Pull out of task
+        db.gyro_turn(45, 200, 60)
+        db.gyro_drive(53, 600, 100, 0.8)  ## drive forward to next task
+        db.gyro_turn(-90, 200, 60)  ## turn to next task
+        db.gyro_drive(15, -400, -100)  ## push into task
+        db.gyro_drive(10, 400, 100)  ## Pull out of task
         db.gyro_turn(-10, 200, 60)
-        db.gyro_drive(17, 300, 200)
-        db.gyro_turn(10, 200, 60)
+        db.gyro_drive(15, 300, 100)
+        db.gyro_turn(18, 200, 60)
         db.gyro_drive(24, 300, 100)
-        db.gyro_turn(30, 200, 60)
+        db.gyro_turn(35, 200, 60)
         self.flagge_alignment()
 
     def flagge_alignment(self):
         db = self.driveBase
-        db.till_collide(400, 800, 5)
-        db.gyro_drive(2, -200, -100)
-        db.till_color(-400, 2, 300, 2)
-        db.gyro_drive(2, -300, -80)
-        db.gyro_turn(-42, 200, 60)
-        db.gyro_drive(27, 300, 200)
+        driven_collided = db.till_collide(400, 700, 5)
+        # db.gyro_drive(2, -200, -100)
+        # db.till_color(-400, 2, 300, 2)
+        logger.debug(driven_collided)
+        db.gyro_drive(driven_collided - 14, -300, -80)
+        self.debug_wait(1)
+        db.gyro_turn(-48, 200, 60)
+        db.gyro_drive(26, 300, 100)
         self.pull_probe()
-    
+
     def pull_probe(self):
         db = self.driveBase
         db.run_action_duration(900, 0.5)
@@ -156,11 +163,17 @@ class Controller:
 
     def collect_left_items(self):
         db = self.driveBase
-        db.gyro_turn(-16, 200, 60)
-        db.gyro_drive(35, 300, 200)
-        db.gyro_turn(-30, 200, 60)
-        db.gyro_drive(20, 300, 100)
-        
+        db.gyro_turn(-20, 200, 60)
+        self.debug_wait(6)
+        db.gyro_drive(35, 300, 100)
+        db.gyro_turn(-40, 200, 60)
+        self.debug_wait(7)
+        db.gyro_drive(50, 300, 100)
+
+    def get_shark(self):
+        db = self.driveBase
+
+        db.gyro_drive(40, -600, -100)
 
     def probe_push_up(self):
         db = self.driveBase
@@ -168,7 +181,8 @@ class Controller:
         db.till_collide(-600, 700)
         db.gyro_drive(60, 600, 200)
         db.till_collide(-600, 700)
-        db.gyro_turn(-30, 400, 100, rotate_mode = 1)
+        db.gyro_turn(-30, 400, 100, rotate_mode=1)
+        self.debug_wait()
 
     def do_nest(self):
         db = self.driveBase
@@ -183,26 +197,32 @@ class Controller:
         db.gyro_turn(10, 100, 80)
         db.gyro_drive(40, 500, 300)  # Drive into Nest
         db.gyro_drive(13, -500, -300)  # Drive out of nest
-        db.gyro_turn(-40, 400, 100) # Turn first part left
-        db.gyro_drive(16, -300, -200) # drive backwards to escape coralriff and align with corals
-        db.gyro_turn(-38, 300, 200) # Press Corals inside
+        db.gyro_turn(-40, 400, 100)  # Turn first part left
+        db.gyro_drive(
+            16, -300, -200
+        )  # drive backwards to escape coralriff and align with corals
+        db.gyro_turn(-38, 300, 200)  # Press Corals inside
         db.gyro_drive(10, -200, -200, stop=False)
         db.gyro_turn(15, 100, 50)
         db.gyro_drive(40, -900, -900)
-        db.gyro_turn(-40, -900, -100, rotate_mode = 1)
+        db.gyro_turn(-40, -900, -100, rotate_mode=1)
         db.till_collide(-500, 1000)
 
     def mini_krake(self):
         db = self.driveBase
-        db.gyro_drive(40, 400, 400, stop = False)
+        db.gyro_drive(40, 400, 400, stop=False)
 
-    
-
+    def artificial_habitat(self):
+        self.__connect_addition__()
+        db = self.driveBase
+        # db.till_collide(400, 500)
+        db.gyro_drive(70, 600)
+        db.gyro_drive(20, -140)
+        db.gyro_drive(70, -600)
 
     def forschungsauftrag_demo(self):
         self.__connect_addition__()
         self.driveBase.gyro_drive(100, 800, 500)
-
 
     ###########
     # TESTING #
@@ -214,7 +234,7 @@ class Controller:
         logger.info(self.driveBase.gyroSens.tilt_angles()[0] / 10, 2)
         time.sleep(1)
         logger.info(self.driveBase.gyroSens.tilt_angles()[0] / 10, 2)
-        #nur der zweite ist korrekt!!!!
+        # nur der zweite ist korrekt!!!!
 
     def test_rotating(self):
         db = self.driveBase
@@ -222,7 +242,7 @@ class Controller:
         # db.gyro_turn(90, 300, 100, rotate_mode = 1)
         # db.gyro_turn(90, -300, -100, rotate_mode = 1)
         # db.gyro_turn(-90, 300, 100, rotate_mode = 1)
-        db.gyro_turn(-90, -300, -100, rotate_mode = 1)
+        db.gyro_turn(-90, -300, -100, rotate_mode=1)
 
     def action_change_debug(self):
         motor.reset_relative_position(self.driveBase.RIGHT, 0)
@@ -541,19 +561,19 @@ class DriveBase:
         angle : int = 90
             The angle the robot should turn for.
             Die Gradzahl um die sich der Roboter drehen soll
-        mainspeed: int = 300
+        mainspeed: int = 300       ### Temporarily deactivated
             The maximum speed the robot reaches.
             Die maximale Geschwindigkeit, die der Roboter erreicht.
-        stopspeed : float = 200
+        stopspeed : float = 200         ### Temporarily deactivated
             The target speed while braking; the minimum speed at the end of the program.
             Die Zielgeschwindigkeit beim Bremsen; die minimale Geschwindigkeit am Ende des Programms.
-        brake_start : int = 0.7
+        brake_start : int = 0.7      ### Temporarily deactivated
             Percentage of the driven distance after which the robot starts braking.
             Prozentsatz der zurückgelegten Strecke, nach dem der Roboter mit dem Bremsen beginnt.
         rotate_mode : int = 0
             The turning mode: normal_turn[0] or tank_turn[1].
             Der Drehmodus: normal_turn[0] oder tank_turn[1].
-        avoid_collision : bool = False
+        avoid_collision : bool = False     ### Temporarily deactivated
             If the robot should try to avoid every collision
             Ob der Roboter versuchen sollte, Kollisionen auszuweichen
         """
@@ -581,14 +601,17 @@ class DriveBase:
 
         if angle < 0:
             steering = -1
+        elif angle < 1:
+            angle = 0
         loop = True
         while loop:
             rotated_distance = self.gyroSens.tilt_angles()[0] / 10
-            speed = max(math.pow(abs((abs(rotated_distance) - abs(angle))),1.6),30)
+            speed = max(math.pow(abs((abs(rotated_distance) - abs(angle))), 1.6), 60)
+            speed = min(speed, 300)
             if abs(rotated_distance) > abs(angle):
                 speed *= -1
-            logger.info(speed,1)
-            logger.info(rotated_distance,1)
+            # logger.info(speed,1)
+            # logger.info(rotated_distance,1)
             # Checking for variants
             # Both Motors turn, robot moves on the spot
             if rotate_mode == 0:
@@ -605,9 +628,9 @@ class DriveBase:
                     motor.run(self.MOTORR, int(speed))
             self.old_rotated = rotated_distance
 
-            if abs(abs(angle)-abs(rotated_distance)) <= 1:
+            if abs(abs(angle) - abs(rotated_distance)) <= 1:
                 time.sleep_ms(20)
-                if abs(abs(angle)-abs(self.gyroSens.tilt_angles()[0] / 10)) <= 1:
+                if abs(abs(angle) - abs(self.gyroSens.tilt_angles()[0] / 10)) <= 1:
                     logger.debug(
                         (abs(angle), 0, rotated_distance, abs(rotated_distance))
                     )
@@ -617,20 +640,28 @@ class DriveBase:
         motor.stop(self.MOTORR)
         return True
 
-    
-    def turn_till_color(self, direction: int = 1, speed: int = 360, color_type: int = 0, color_gate: int = 700, timeout: int = -1):
+    def turn_till_color(
+        self,
+        direction: int = 1,
+        speed: int = 360,
+        color_type: int = 0,
+        color_gate: int = 700,
+        timeout: int = -1,
+    ):
         """
 
-            direction (either -1 or 1 idk which is which, ig -1 is left and 1 is right)
-        
+        direction (either -1 or 1 idk which is which, ig -1 is left and 1 is right)
+
         """
 
         self.auto_detect_device(self.TYPECOLORSENS)
         if timeout > 0:
-            motor_pair.move_for_time(self.MOTPAIR, timeout, direction * 100, velocity = speed)
+            motor_pair.move_for_time(
+                self.MOTPAIR, timeout, direction * 100, velocity=speed
+            )
         else:
-            motor_pair.move(self.MOTPAIR, direction * 100, velocity = speed)
-        
+            motor_pair.move(self.MOTPAIR, direction * 100, velocity=speed)
+
         start_time = time.ticks_ms()
 
         while True:
@@ -644,16 +675,23 @@ class DriveBase:
             else:
                 time.sleep_ms(50)
         motor.stop(self.MOTPAIR)
-    
-    def turn_till_reflect(self, direction: int = 1, speed: int = 360, reflection_gate: int = 700, smaller_than: int = True, timeout: int = -1):
+
+    def turn_till_reflect(
+        self,
+        direction: int = 1,
+        speed: int = 360,
+        reflection_gate: int = 700,
+        smaller_than: int = True,
+        timeout: int = -1,
+    ):
         """
 
-            direction (either -1 or 1 idk which is which, ig -1 is left and 1 is right)
+        direction (either -1 or 1 idk which is which, ig -1 is left and 1 is right)
 
         """
 
         self.auto_detect_device(self.TYPECOLORSENS)
-        motor_pair.move(self.MOTPAIR, direction * 100, velocity = speed)
+        motor_pair.move(self.MOTPAIR, direction * 100, velocity=speed)
 
         start_time = time.ticks_ms()
 
@@ -669,15 +707,23 @@ class DriveBase:
                 break
             else:
                 time.sleep_ms(50)
-        print("FInish")
+        print("Finish")
         motor.stop(self.MOTPAIR)
 
-    def till_collide(self, speed, gate: int = 300, timeout: int = -1):
+    def till_collide(self, speed, gate: int = 300, timeout: int = -1) -> float:
         def cycl() -> float:
             return (
                 abs(motor.get_duty_cycle(self.MOTORL))
                 + abs(motor.get_duty_cycle(self.MOTORR))
             ) / 2
+
+        def get_driven() -> float:
+            return (
+                abs(motor.relative_position(self.MOTORL))
+                + abs(motor.relative_position(self.MOTORR))
+            ) / 2
+
+        start_dist = get_driven()
 
         motor_pair.move(self.MOTPAIR, 0, velocity=speed)
         time.sleep(0.5)
@@ -685,22 +731,27 @@ class DriveBase:
         start_time = time.ticks_ms()
         while True:
             if self.collided(cycl(), start_cycl, gate):
+                print(cycl())
                 break
-            elif (time.ticks_ms() - start_time) / 1000 > timeout:
+            elif (time.ticks_ms() - start_time) / 1000 > timeout and timeout > 0:
                 logger.debug(abs(time.ticks_diff(start_time, time.ticks_ms)) / 1000)
                 break
             else:
                 time.sleep_ms(50)
         motor_pair.stop(self.MOTPAIR)
-        return True
-    
-    def till_color(self, speed: int, color_type: int = 0, color_gate: int = 700, timeout: int = -1):
+
+        distance = ((get_driven() - start_dist) * self.WHEELCIRC) / 360
+        return distance
+
+    def till_color(
+        self, speed: int, color_type: int = 0, color_gate: int = 700, timeout: int = -1
+    ):
         self.auto_detect_device(self.TYPECOLORSENS)
         # if timeout > 0:
         #     motor_pair.move_for_time(self.MOTPAIR, timeout, 0, velocity = speed)
         # else:
-        motor_pair.move(self.MOTPAIR, 0, velocity = speed)
-        
+        motor_pair.move(self.MOTPAIR, 0, velocity=speed)
+
         start_time = time.ticks_ms()
 
         loop = True
@@ -720,8 +771,6 @@ class DriveBase:
                 print("IDK what happens")
         print("Finish")
         motor.stop(self.MOTPAIR)
-        
-        
 
     def around_kollision(self, timestamp, power, old_power, steering, speed):
         # logger.debug((timestamp, power, old_power))
